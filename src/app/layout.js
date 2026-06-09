@@ -1,5 +1,6 @@
 import "./globals.css";
 import Nav from "@/components/Nav";
+import { IdentityProvider } from "@/components/useIdentity";
 
 export const metadata = {
   title: "Shredded — get there together",
@@ -17,8 +18,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="font-sans antialiased">
-        <Nav />
-        <main className="mx-auto max-w-4xl px-4 py-6 pb-24">{children}</main>
+        <IdentityProvider>
+          <Nav />
+          <main className="mx-auto max-w-4xl px-4 py-6 pb-24">{children}</main>
+        </IdentityProvider>
       </body>
     </html>
   );

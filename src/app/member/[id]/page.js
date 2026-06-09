@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
@@ -11,8 +11,8 @@ import { formatDate, formatKg, goalProgress, vibeEmoji } from "@/lib/format";
 const REACTIONS = ["🔥", "💪", "❤️", "👏", "🚀"];
 
 export default function MemberProfilePage({ params }) {
-  // Next 14: params can be unwrapped with React.use().
-  const { id } = use(params);
+  // Next 14 passes params to client pages as a plain object.
+  const { id } = params;
   const { member: me } = useIdentity();
 
   const [member, setMember] = useState(null);
