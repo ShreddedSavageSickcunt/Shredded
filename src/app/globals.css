@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #fffaf5;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 100% -10%, #fff1e6 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #f0fde4 0%, transparent 55%),
+    var(--bg);
+  color: #1c1917;
+  min-height: 100dvh;
+}
+
+/* Reusable component classes for a consistent, energetic look. */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 font-semibold transition active:scale-95 disabled:opacity-50 disabled:active:scale-100;
+  }
+  .btn-primary {
+    @apply btn bg-flame-500 text-white shadow-lg shadow-flame-500/30 hover:bg-flame-600;
+  }
+  .btn-ghost {
+    @apply btn bg-white/70 text-stone-700 ring-1 ring-stone-200 hover:bg-white;
+  }
+  .card {
+    @apply rounded-3xl bg-white/80 p-5 shadow-sm ring-1 ring-stone-200/70 backdrop-blur;
+  }
+  .input {
+    @apply w-full rounded-2xl border-0 bg-stone-100 px-4 py-3 text-stone-900 ring-1 ring-inset ring-stone-200 placeholder:text-stone-400 focus:bg-white focus:ring-2 focus:ring-flame-500;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-semibold text-stone-700;
+  }
+}

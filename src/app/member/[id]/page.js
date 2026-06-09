@@ -1,0 +1,178 @@
+"use client";
+
+import { use, useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { supabase } from "@/lib/supabaseClient";
+import { useIdentity } from "@/components/useIdentity";
+import ConfigNotice from "@/components/ConfigNotice";
+import { formatDate, formatKg, goalProgress, vibeEmoji } from "@/lib/format";
+
+const REACTIONS = ["🔥", "💪", "❤️", "👏", "🚀"];
+
+export default function MemberProfilePage({ params }) {
+  // Next 14: params can be unwrapped with React.use().
+  const { id } = use(params);
+  const { member: me } = useIdentity();
+
+  const [member, setMember] = useState(null);
+  const [goal, setGoal] = useState(null);
+  const [checkins, setCheckins] = useState([]);
+  const [reactions, setReactions] = useState({}); // checkin_id -> array
+  const [loading, setLoading] = useState(true);
+
+  async function loadReactions(checkinIds) {
+    if (checkinIds.length === 0) return setReactions({});
+    const { data } = await supabase
+      .from("reactions")
+      .select("*")
+      .in("checkin_id", checkinIds);
+    const grouped = {};
+    (data || []).forEach((r) => {
+      (grouped[r.checkin_id] = grouped[r.checkin_id] || []).push(r);
+    });
+    setReactions(grouped);
+  }
+
+  useEffect(() => {
+    if (!supabase) return setLoading(false);
+    (async () => {
+      const [{ data: m }, { data: g }, { data: c }] = await Promise.all([
+        supabase.from("members").select("*").eq("id", id).maybeSingle(),
+        supabase
+          .from("goals")
+          .select("*")
+          .eq("member_id", id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("checkins")
+          .select("*")
+          .eq("member_id", id)
+          .order("checkin_date", { ascending: false }),
+      ]);
+      setMember(m || null);
+      setGoal(g || null);
+      setCheckins(c || []);
+      await loadReactions((c || []).map((x) => x.id));
+      setLoading(false);
+    })();
+  }, [id]);
+
+  async function toggleReaction(checkinId, emoji) {
+    if (!me) return;
+    const existing = (reactions[checkinId] || []).find(
+      (r) => r.member_id === me.id && r.emoji === emoji
+    );
+    if (existing) {
+      await supabase.from("reactions").delete().eq("id", existing.id);
+    } else {
+      await supabase
+        .from("reactions")
+        .insert({ checkin_id: checkinId, member_id: me.id, emoji });
+    }
+    await loadReactions(checkins.map((x) => x.id));
+  }
+
+  if (loading) return <div className="py-16 text-center text-stone-400">Loading…</div>;
+  if (!member)
+    return (
+      <div className="card mx-auto max-w-md text-center">
+        <p>Member not found.</p>
+        <Link href="/" className="mt-2 inline-block font-semibold text-flame-600 underline">
+          Back to the squad
+        </Link>
+      </div>
+    );
+
+  const latestWeight = checkins[0]?.weight_kg ?? goal?.starting_weight_kg;
+  const pct = goalProgress(goal?.starting_weight_kg, goal?.target_weight_kg, latestWeight);
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      <ConfigNotice />
+
+      {/* Header */}
+      <section className="card flex items-center gap-4">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-flame-100 text-2xl font-bold text-flame-600">
+          {member.name?.[0]?.toUpperCase()}
+        </div>
+        <div className="flex-1">
+          <h1 className="text-2xl font-extrabold">{member.name}</h1>
+          <p className="text-sm text-stone-400">Joined {formatDate(member.join_date)}</p>
+          {pct !== null && (
+            <div className="mt-2">
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-stone-100">
+                <div className="h-full rounded-full bg-gradient-to-r from-lime-400 to-lime-600" style={{ width: `${pct}%` }} />
+              </div>
+              <p className="mt-1 text-xs text-stone-500">
+                {formatKg(latestWeight)} now · started {formatKg(goal?.starting_weight_kg)} · target {formatKg(goal?.target_weight_kg)} · {pct}% there
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {goal?.principles && (
+        <section className="card">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-stone-400">Principles</h2>
+          <p className="mt-1 whitespace-pre-wrap text-stone-700">{goal.principles}</p>
+        </section>
+      )}
+
+      {/* History */}
+      <section className="space-y-3">
+        <h2 className="px-1 text-lg font-bold text-stone-700">Check-in history</h2>
+        {checkins.length === 0 ? (
+          <div className="card text-center text-stone-500">No check-ins yet.</div>
+        ) : (
+          checkins.map((c) => {
+            const rx = reactions[c.id] || [];
+            const counts = {};
+            rx.forEach((r) => (counts[r.emoji] = (counts[r.emoji] || 0) + 1));
+            return (
+              <article key={c.id} className="card space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="font-bold text-stone-800">{formatDate(c.checkin_date)}</p>
+                  <span className="text-2xl">{vibeEmoji(c.vibe_rating)}</span>
+                </div>
+                <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-600">
+                  {c.weight_kg != null && <span>⚖️ {formatKg(c.weight_kg)}</span>}
+                  {c.calories_consumed != null && <span>🍽️ {c.calories_consumed} cal/day</span>}
+                </div>
+                {c.notes && <p className="whitespace-pre-wrap text-stone-700">{c.notes}</p>}
+                {c.photo_url && (
+                  <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-stone-100">
+                    <Image src={c.photo_url} alt="Progress photo" fill className="object-cover" />
+                  </div>
+                )}
+
+                {/* Reactions */}
+                <div className="flex flex-wrap items-center gap-1.5 border-t border-stone-100 pt-2">
+                  {REACTIONS.map((emoji) => {
+                    const mine = rx.some((r) => r.member_id === me?.id && r.emoji === emoji);
+                    const n = counts[emoji] || 0;
+                    return (
+                      <button
+                        key={emoji}
+                        onClick={() => toggleReaction(c.id, emoji)}
+                        disabled={!me}
+                        className={`rounded-full px-2.5 py-1 text-sm transition disabled:opacity-40 ${
+                          mine ? "bg-flame-100 ring-1 ring-flame-400" : "bg-stone-100 hover:bg-stone-200"
+                        }`}
+                      >
+                        {emoji} {n > 0 && <span className="text-xs font-semibold">{n}</span>}
+                      </button>
+                    );
+                  })}
+                  {!me && <span className="ml-1 text-xs text-stone-400">Identify to react</span>}
+                </div>
+              </article>
+            );
+          })
+        )}
+      </section>
+    </div>
+  );
+}
