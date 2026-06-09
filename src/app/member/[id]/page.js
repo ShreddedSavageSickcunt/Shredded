@@ -75,12 +75,12 @@ export default function MemberProfilePage({ params }) {
     await loadReactions(checkins.map((x) => x.id));
   }
 
-  if (loading) return <div className="py-16 text-center text-stone-400">Loading…</div>;
+  if (loading) return <div className="py-16 text-center text-zinc-500">Loading…</div>;
   if (!member)
     return (
       <div className="card mx-auto max-w-md text-center">
         <p>Member not found.</p>
-        <Link href="/" className="mt-2 inline-block font-semibold text-flame-600 underline">
+        <Link href="/" className="mt-2 inline-block font-semibold text-flame-400 underline">
           Back to the squad
         </Link>
       </div>
@@ -95,18 +95,18 @@ export default function MemberProfilePage({ params }) {
 
       {/* Header */}
       <section className="card flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-flame-100 text-2xl font-bold text-flame-600">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-flame-500/15 text-2xl font-bold text-flame-400 ring-1 ring-flame-500/20">
           {member.name?.[0]?.toUpperCase()}
         </div>
         <div className="flex-1">
           <h1 className="text-2xl font-extrabold">{member.name}</h1>
-          <p className="text-sm text-stone-400">Joined {formatDate(member.join_date)}</p>
+          <p className="text-sm text-zinc-500">Joined {formatDate(member.join_date)}</p>
           {pct !== null && (
             <div className="mt-2">
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-stone-100">
-                <div className="h-full rounded-full bg-gradient-to-r from-lime-400 to-lime-600" style={{ width: `${pct}%` }} />
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-ink-850">
+                <div className="h-full rounded-full bg-gradient-to-r from-viz-green to-flame-400" style={{ width: `${pct}%` }} />
               </div>
-              <p className="mt-1 text-xs text-stone-500">
+              <p className="mt-1 text-xs text-zinc-400">
                 {formatKg(latestWeight)} now · started {formatKg(goal?.starting_weight_kg)} · target {formatKg(goal?.target_weight_kg)} · {pct}% there
               </p>
             </div>
@@ -116,16 +116,16 @@ export default function MemberProfilePage({ params }) {
 
       {goal?.principles && (
         <section className="card">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-stone-400">Principles</h2>
-          <p className="mt-1 whitespace-pre-wrap text-stone-700">{goal.principles}</p>
+          <h2 className="stat-label">Principles</h2>
+          <p className="mt-1 whitespace-pre-wrap text-zinc-200">{goal.principles}</p>
         </section>
       )}
 
       {/* History */}
       <section className="space-y-3">
-        <h2 className="px-1 text-lg font-bold text-stone-700">Check-in history</h2>
+        <h2 className="px-1 text-lg font-bold text-zinc-200">Check-in history</h2>
         {checkins.length === 0 ? (
-          <div className="card text-center text-stone-500">No check-ins yet.</div>
+          <div className="card text-center text-zinc-400">No check-ins yet.</div>
         ) : (
           checkins.map((c) => {
             const rx = reactions[c.id] || [];
@@ -134,22 +134,22 @@ export default function MemberProfilePage({ params }) {
             return (
               <article key={c.id} className="card space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="font-bold text-stone-800">{formatDate(c.checkin_date)}</p>
+                  <p className="font-bold text-zinc-100">{formatDate(c.checkin_date)}</p>
                   <span className="text-2xl">{vibeEmoji(c.vibe_rating)}</span>
                 </div>
-                <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-600">
+                <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-zinc-300">
                   {c.weight_kg != null && <span>⚖️ {formatKg(c.weight_kg)}</span>}
                   {c.calories_consumed != null && <span>🍽️ {c.calories_consumed} cal/day</span>}
                 </div>
-                {c.notes && <p className="whitespace-pre-wrap text-stone-700">{c.notes}</p>}
+                {c.notes && <p className="whitespace-pre-wrap text-zinc-200">{c.notes}</p>}
                 {c.photo_url && (
-                  <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-stone-100">
+                  <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-ink-850">
                     <Image src={c.photo_url} alt="Progress photo" fill className="object-cover" />
                   </div>
                 )}
 
                 {/* Reactions */}
-                <div className="flex flex-wrap items-center gap-1.5 border-t border-stone-100 pt-2">
+                <div className="flex flex-wrap items-center gap-1.5 border-t border-white/10 pt-2">
                   {REACTIONS.map((emoji) => {
                     const mine = rx.some((r) => r.member_id === me?.id && r.emoji === emoji);
                     const n = counts[emoji] || 0;
@@ -159,14 +159,14 @@ export default function MemberProfilePage({ params }) {
                         onClick={() => toggleReaction(c.id, emoji)}
                         disabled={!me}
                         className={`rounded-full px-2.5 py-1 text-sm transition disabled:opacity-40 ${
-                          mine ? "bg-flame-100 ring-1 ring-flame-400" : "bg-stone-100 hover:bg-stone-200"
+                          mine ? "bg-flame-500/20 ring-1 ring-flame-500" : "bg-ink-850 hover:bg-ink-800"
                         }`}
                       >
-                        {emoji} {n > 0 && <span className="text-xs font-semibold">{n}</span>}
+                        {emoji} {n > 0 && <span className="text-xs font-semibold text-zinc-300">{n}</span>}
                       </button>
                     );
                   })}
-                  {!me && <span className="ml-1 text-xs text-stone-400">Identify to react</span>}
+                  {!me && <span className="ml-1 text-xs text-zinc-500">Identify to react</span>}
                 </div>
               </article>
             );

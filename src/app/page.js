@@ -64,19 +64,36 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <ConfigNotice />
 
-      {/* Hero */}
-      <section className="rounded-3xl bg-gradient-to-br from-flame-500 to-flame-600 p-6 text-white shadow-lg shadow-flame-500/30">
-        <p className="text-sm font-semibold uppercase tracking-wide text-white/80">
-          {settings?.challenge_name || "The Challenge"}
-        </p>
-        <h1 className="mt-1 text-3xl font-extrabold sm:text-4xl">
-          {settings?.team_name || "The Shredded Squad"} 🔥
-        </h1>
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-white/90">
-          {settings?.start_date && <span>Started {formatDate(settings.start_date)}</span>}
-          {left !== null && <span className="font-semibold">{left} days to go 💨</span>}
-          {settings?.checkin_frequency_days && (
-            <span>Check in every {settings.checkin_frequency_days} days</span>
+      {/* Hero — dark card with a stat readout. */}
+      <section className="relative overflow-hidden rounded-3xl bg-ink-900 p-6 ring-1 ring-white/10">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-flame-500/20 blur-3xl" />
+        <div className="relative">
+          <p className="stat-label">{settings?.challenge_name || "The Challenge"}</p>
+          <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">
+            {settings?.team_name || "The Shredded Squad"}{" "}
+            <span className="text-flame-500">🔥</span>
+          </h1>
+
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            <div className="rounded-2xl bg-ink-850 p-3 ring-1 ring-white/5">
+              <p className="stat-num text-flame-400">{left ?? "—"}</p>
+              <p className="stat-label mt-1">days to go</p>
+            </div>
+            <div className="rounded-2xl bg-ink-850 p-3 ring-1 ring-white/5">
+              <p className="stat-num">{rows.length || "—"}</p>
+              <p className="stat-label mt-1">in the squad</p>
+            </div>
+            <div className="rounded-2xl bg-ink-850 p-3 ring-1 ring-white/5">
+              <p className="stat-num">{settings?.checkin_frequency_days || "—"}</p>
+              <p className="stat-label mt-1">day cadence</p>
+            </div>
+          </div>
+
+          {settings?.start_date && (
+            <p className="mt-3 text-xs text-zinc-500">
+              Started {formatDate(settings.start_date)}
+              {settings?.end_date ? ` · ends ${formatDate(settings.end_date)}` : ""}
+            </p>
           )}
         </div>
       </section>
@@ -92,14 +109,14 @@ export default function DashboardPage() {
 
       {/* Members */}
       <section className="space-y-3">
-        <h2 className="px-1 text-lg font-bold text-stone-700">The crew</h2>
+        <h2 className="px-1 text-lg font-bold text-zinc-200">The crew</h2>
 
         {loading ? (
-          <p className="px-1 text-stone-400">Loading the squad…</p>
+          <p className="px-1 text-zinc-500">Loading the squad…</p>
         ) : rows.length === 0 ? (
-          <div className="card text-center text-stone-500">
+          <div className="card text-center text-zinc-400">
             No members yet. Head to{" "}
-            <Link href="/admin" className="font-semibold text-flame-600 underline">
+            <Link href="/admin" className="font-semibold text-flame-400 underline">
               Admin
             </Link>{" "}
             to add your crew.
@@ -115,19 +132,15 @@ export default function DashboardPage() {
               <Link
                 key={member.id}
                 href={`/member/${member.id}`}
-                className="card flex items-center gap-4 transition hover:shadow-md"
+                className="card flex items-center gap-4 transition hover:ring-white/20"
               >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-flame-100 text-lg font-bold text-flame-600">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-flame-500/15 text-lg font-bold text-flame-400 ring-1 ring-flame-500/20">
                   {member.name?.[0]?.toUpperCase() || "?"}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="truncate font-bold text-stone-800">{member.name}</p>
-                    {member.is_admin && (
-                      <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-bold uppercase text-stone-500">
-                        admin
-                      </span>
-                    )}
+                    <p className="truncate font-bold text-zinc-100">{member.name}</p>
+                    {member.is_admin && <span className="chip">admin</span>}
                     {checkin && (
                       <span className="ml-auto text-xl" title="Latest vibe">
                         {vibeEmoji(checkin.vibe_rating)}
@@ -137,22 +150,22 @@ export default function DashboardPage() {
 
                   {pct !== null ? (
                     <div className="mt-2">
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-stone-100">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-ink-850">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-lime-400 to-lime-600"
+                          className="h-full rounded-full bg-gradient-to-r from-viz-green to-flame-400"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                      <p className="mt-1 text-xs text-stone-500">
+                      <p className="mt-1 text-xs text-zinc-400">
                         {formatKg(checkin?.weight_kg ?? goal?.starting_weight_kg)} ·{" "}
                         {pct}% to {formatKg(goal?.target_weight_kg)}
                       </p>
                     </div>
                   ) : (
-                    <p className="mt-1 text-xs text-stone-400">No goal set yet</p>
+                    <p className="mt-1 text-xs text-zinc-500">No goal set yet</p>
                   )}
 
-                  <p className="mt-1 text-xs text-stone-400">
+                  <p className="mt-1 text-xs text-zinc-500">
                     {checkin
                       ? `Last check-in ${formatDate(checkin.checkin_date)}`
                       : "No check-ins yet"}

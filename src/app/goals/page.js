@@ -64,12 +64,12 @@ function GoalForm() {
     setTimeout(() => router.push("/"), 700);
   }
 
-  if (loading) return <div className="py-16 text-center text-stone-400">Loading your goal…</div>;
+  if (loading) return <div className="py-16 text-center text-zinc-500">Loading your goal…</div>;
 
   return (
     <div className="mx-auto max-w-md">
       <h1 className="mb-1 text-2xl font-extrabold">🎯 Your goal</h1>
-      <p className="mb-5 text-sm text-stone-500">Set the target you’re chasing and the rules you live by.</p>
+      <p className="mb-5 text-sm text-zinc-400">Set the target you’re chasing and the rules you live by.</p>
 
       <form onSubmit={handleSubmit} className="card space-y-4">
         <div className="grid grid-cols-2 gap-3">
@@ -91,11 +91,11 @@ function GoalForm() {
         <div>
           <label className="label">My principles</label>
           <textarea className="input min-h-28" value={form.principles} onChange={set("principles")} placeholder="No booze on weekdays. Walk 8k steps. Protein with every meal…" />
-          <p className="mt-1 text-xs text-stone-400">Your personal rules / approach — the squad can see these for accountability.</p>
+          <p className="mt-1 text-xs text-zinc-500">Your personal rules / approach — the squad can see these for accountability.</p>
         </div>
 
-        {error && <p className="text-sm font-medium text-red-600">{error}</p>}
-        {saved && <p className="text-sm font-medium text-lime-600">Saved! Redirecting…</p>}
+        {error && <p className="text-sm font-medium text-red-400">{error}</p>}
+        {saved && <p className="text-sm font-medium text-emerald-400">Saved! Redirecting…</p>}
 
         <button className="btn-primary w-full" disabled={busy}>
           {busy ? "Saving…" : "Save my goal 💪"}

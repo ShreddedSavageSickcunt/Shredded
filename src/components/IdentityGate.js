@@ -17,7 +17,7 @@ export default function IdentityGate({ children }) {
   const [busy, setBusy] = useState(false);
 
   if (!ready) {
-    return <div className="py-16 text-center text-stone-400">Loading…</div>;
+    return <div className="py-16 text-center text-zinc-500">Loading…</div>;
   }
 
   if (member) return children;
@@ -54,7 +54,7 @@ export default function IdentityGate({ children }) {
       <ConfigNotice />
       <div className="card">
         <h2 className="text-xl font-bold">👋 Who’s checking in?</h2>
-        <p className="mt-1 text-sm text-stone-500">
+        <p className="mt-1 text-sm text-zinc-400">
           Enter your name and the access code your group admin gave you.
         </p>
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">
@@ -78,7 +78,7 @@ export default function IdentityGate({ children }) {
               required
             />
           </div>
-          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+          {error && <p className="text-sm font-medium text-red-400">{error}</p>}
           <button className="btn-primary w-full" disabled={busy}>
             {busy ? "Checking…" : "Let’s go 🚀"}
           </button>

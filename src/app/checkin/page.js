@@ -64,7 +64,7 @@ function CheckinForm() {
   return (
     <div className="mx-auto max-w-md">
       <h1 className="mb-1 text-2xl font-extrabold">✅ Check in, {member.name}!</h1>
-      <p className="mb-5 text-sm text-stone-500">How did the week go? Be honest — the squad’s got you.</p>
+      <p className="mb-5 text-sm text-zinc-400">How did the week go? Be honest — the squad’s got you.</p>
 
       <form onSubmit={handleSubmit} className="card space-y-4">
         <div className="grid grid-cols-2 gap-3">
@@ -95,7 +95,7 @@ function CheckinForm() {
                   key={rating}
                   onClick={() => setForm({ ...form, vibe_rating: rating })}
                   className={`flex-1 rounded-2xl py-3 text-2xl transition ${
-                    active ? "bg-flame-100 ring-2 ring-flame-500 scale-110" : "bg-stone-100 hover:bg-stone-200"
+                    active ? "bg-flame-500/20 ring-2 ring-flame-500 scale-110" : "bg-ink-850 hover:bg-ink-800"
                   }`}
                   aria-label={`Vibe ${rating}`}
                 >
@@ -116,7 +116,7 @@ function CheckinForm() {
           <input type="file" accept="image/*" className="input file:mr-3 file:rounded-full file:border-0 file:bg-flame-500 file:px-3 file:py-1 file:text-white" onChange={(e) => setPhoto(e.target.files?.[0] || null)} />
         </div>
 
-        {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+        {error && <p className="text-sm font-medium text-red-400">{error}</p>}
 
         <button className="btn-primary w-full" disabled={busy}>
           {busy ? "Saving…" : "Post check-in 🎉"}

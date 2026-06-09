@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --bg: #fffaf5;
+  color-scheme: dark;
 }
 
 html,
@@ -13,32 +13,63 @@ body {
 }
 
 body {
+  /* Near-black canvas with a whisper of warmth up top. */
   background:
-    radial-gradient(1200px 600px at 100% -10%, #fff1e6 0%, transparent 60%),
-    radial-gradient(900px 500px at -10% 10%, #f0fde4 0%, transparent 55%),
-    var(--bg);
-  color: #1c1917;
+    radial-gradient(900px 500px at 50% -15%, rgba(249, 115, 22, 0.08) 0%, transparent 60%),
+    #0a0a0b;
+  color: #fafafa;
   min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Reusable component classes for a consistent, energetic look. */
+/* Reusable component classes — the dark design language lives here. */
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 font-semibold transition active:scale-95 disabled:opacity-50 disabled:active:scale-100;
   }
   .btn-primary {
-    @apply btn bg-flame-500 text-white shadow-lg shadow-flame-500/30 hover:bg-flame-600;
+    @apply btn bg-flame-500 text-white shadow-lg shadow-flame-500/25 hover:bg-flame-400;
   }
   .btn-ghost {
-    @apply btn bg-white/70 text-stone-700 ring-1 ring-stone-200 hover:bg-white;
+    @apply btn bg-ink-850 text-zinc-200 ring-1 ring-white/10 hover:bg-ink-800;
   }
+
   .card {
-    @apply rounded-3xl bg-white/80 p-5 shadow-sm ring-1 ring-stone-200/70 backdrop-blur;
+    @apply rounded-3xl bg-ink-900 p-5 ring-1 ring-white/10;
   }
+
   .input {
-    @apply w-full rounded-2xl border-0 bg-stone-100 px-4 py-3 text-stone-900 ring-1 ring-inset ring-stone-200 placeholder:text-stone-400 focus:bg-white focus:ring-2 focus:ring-flame-500;
+    @apply w-full rounded-2xl border-0 bg-ink-850 px-4 py-3 text-zinc-100 ring-1 ring-inset ring-white/10 placeholder:text-zinc-500 focus:bg-ink-850 focus:outline-none focus:ring-2 focus:ring-flame-500;
   }
   .label {
-    @apply mb-1.5 block text-sm font-semibold text-stone-700;
+    @apply mb-1.5 block text-sm font-semibold text-zinc-300;
   }
+
+  /* Segmented pill control (e.g. the vibe picker, time ranges). */
+  .seg {
+    @apply inline-flex items-center gap-1 rounded-full bg-ink-850 p-1 ring-1 ring-white/10;
+  }
+  .seg-item {
+    @apply rounded-full px-3 py-1.5 text-sm font-semibold text-zinc-400 transition;
+  }
+  .seg-item-active {
+    @apply bg-ink-800 text-white shadow;
+  }
+
+  /* Big stat readout: number + unit + label. */
+  .stat-num {
+    @apply text-3xl font-extrabold leading-none tracking-tight text-white;
+  }
+  .stat-label {
+    @apply text-[11px] font-semibold uppercase tracking-wide text-zinc-500;
+  }
+
+  .chip {
+    @apply inline-flex items-center rounded-full bg-ink-850 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-400 ring-1 ring-white/10;
+  }
+}
+
+/* Track for native date/file controls reads better on dark. */
+::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
 }

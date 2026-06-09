@@ -52,7 +52,7 @@ function AdminPanel() {
     return (
       <div className="card mx-auto max-w-md text-center">
         <p className="text-lg font-bold">🔒 Admins only</p>
-        <p className="mt-1 text-sm text-stone-500">
+        <p className="mt-1 text-sm text-zinc-400">
           Ask a group admin to make changes here.
         </p>
       </div>
@@ -110,7 +110,7 @@ function AdminPanel() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <h1 className="text-2xl font-extrabold">⚙️ Admin panel</h1>
-      {msg && <p className="rounded-2xl bg-stone-100 px-4 py-2 text-sm font-medium">{msg}</p>}
+      {msg && <p className="rounded-2xl bg-ink-850 px-4 py-2 text-sm font-medium ring-1 ring-white/10">{msg}</p>}
 
       {/* Challenge settings */}
       <form onSubmit={saveSettings} className="card space-y-4">
@@ -143,37 +143,37 @@ function AdminPanel() {
       {/* Members */}
       <div className="card space-y-4">
         <h2 className="text-lg font-bold">The crew ({members.length})</h2>
-        <ul className="divide-y divide-stone-100">
+        <ul className="divide-y divide-white/10">
           {members.map((m) => (
             <li key={m.id} className="flex items-center gap-3 py-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-flame-100 font-bold text-flame-600">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-flame-500/15 font-bold text-flame-400 ring-1 ring-flame-500/20">
                 {m.name?.[0]?.toUpperCase()}
               </div>
               <div className="flex-1">
-                <p className="font-semibold">
+                <p className="font-semibold text-zinc-100">
                   {m.name}{" "}
-                  {m.is_admin && <span className="text-xs text-stone-400">· admin</span>}
+                  {m.is_admin && <span className="text-xs text-zinc-500">· admin</span>}
                 </p>
-                <p className="text-xs text-stone-400">
+                <p className="text-xs text-zinc-500">
                   code: {m.access_code} · joined {formatDate(m.join_date)}
                 </p>
               </div>
-              <button onClick={() => removeMember(m.id)} className="rounded-full px-3 py-1 text-sm text-red-500 hover:bg-red-50">
+              <button onClick={() => removeMember(m.id)} className="rounded-full px-3 py-1 text-sm text-red-400 hover:bg-red-500/10">
                 remove
               </button>
             </li>
           ))}
-          {members.length === 0 && <li className="py-2 text-sm text-stone-400">No members yet.</li>}
+          {members.length === 0 && <li className="py-2 text-sm text-zinc-500">No members yet.</li>}
         </ul>
 
-        <form onSubmit={addMember} className="space-y-3 border-t border-stone-100 pt-4">
+        <form onSubmit={addMember} className="space-y-3 border-t border-white/10 pt-4">
           <h3 className="font-semibold">Add a member</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <input className="input" value={newMember.name} onChange={(e) => setNewMember({ ...newMember, name: e.target.value })} placeholder="Name" required />
             <input className="input" value={newMember.access_code} onChange={(e) => setNewMember({ ...newMember, access_code: e.target.value })} placeholder="Access code" required />
           </div>
-          <label className="flex items-center gap-2 text-sm font-medium text-stone-600">
-            <input type="checkbox" checked={newMember.is_admin} onChange={(e) => setNewMember({ ...newMember, is_admin: e.target.checked })} />
+          <label className="flex items-center gap-2 text-sm font-medium text-zinc-300">
+            <input type="checkbox" className="h-4 w-4 accent-flame-500" checked={newMember.is_admin} onChange={(e) => setNewMember({ ...newMember, is_admin: e.target.checked })} />
             Make this person an admin
           </label>
           <button className="btn-ghost" disabled={busy}>＋ Add member</button>

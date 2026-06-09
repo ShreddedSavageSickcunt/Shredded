@@ -33,25 +33,28 @@ export default function Nav() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-stone-200/70 bg-white/70 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-white/10 bg-ink-950/80 backdrop-blur">
       <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-3">
         <Link href="/" className="flex items-center gap-2 font-extrabold tracking-tight">
           <span className="text-xl">🔥</span>
-          <span className="bg-gradient-to-r from-flame-600 to-lime-600 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-flame-400 to-viz-coral bg-clip-text text-transparent">
             {teamName}
           </span>
         </Link>
-        <div className="flex items-center gap-1">
-          {member ? (
-            <button
-              onClick={clearStoredMember}
-              className="hidden rounded-full px-3 py-1.5 text-sm font-medium text-stone-500 hover:bg-stone-100 sm:block"
-              title="Sign out"
-            >
-              {member.name} · sign out
-            </button>
-          ) : null}
-        </div>
+        {member ? (
+          <button
+            onClick={clearStoredMember}
+            className="flex items-center gap-1.5 rounded-full bg-ink-850 px-3 py-1.5 text-sm font-medium text-zinc-300 ring-1 ring-white/10 hover:bg-ink-800"
+            title="Sign out"
+          >
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-flame-500/20 text-[11px] font-bold text-flame-400">
+              {member.name?.[0]?.toUpperCase()}
+            </span>
+            <span className="max-w-[7rem] truncate">{member.name}</span>
+            <span className="text-zinc-500">·</span>
+            <span className="text-zinc-400">sign out</span>
+          </button>
+        ) : null}
       </div>
 
       {/* Bottom tab bar — thumb-friendly on phones. */}
@@ -64,8 +67,8 @@ export default function Nav() {
               href={l.href}
               className={`flex flex-col items-center rounded-2xl px-4 py-1.5 text-xs font-semibold transition sm:flex-row sm:gap-1.5 sm:text-sm ${
                 active
-                  ? "bg-flame-100 text-flame-600"
-                  : "text-stone-500 hover:bg-stone-100"
+                  ? "bg-flame-500/15 text-flame-400"
+                  : "text-zinc-500 hover:bg-ink-850 hover:text-zinc-300"
               }`}
             >
               <span className="text-base sm:text-sm">{l.emoji}</span>
