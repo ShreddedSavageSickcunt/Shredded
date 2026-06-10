@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useIdentity } from "@/components/useIdentity";
 import ConfigNotice from "@/components/ConfigNotice";
 import Icon from "@/components/Icon";
+import CheckinTrends from "@/components/CheckinTrends";
 import { formatKg, goalProgress, formatDate } from "@/lib/format";
 
 function daysSince(dateStr) {
@@ -16,15 +17,6 @@ function daysSince(dateStr) {
 
 function currentWeightOf(member, goal, checkin) {
   return checkin?.weight_kg ?? member?.current_weight_kg ?? goal?.starting_weight_kg ?? null;
-}
-
-// Habit adherence -> tone for the feed indicator.
-function adherenceTone(checkin) {
-  if (!checkin?.commitments_total) return null;
-  const ratio = checkin.commitments_met / checkin.commitments_total;
-  if (ratio >= 0.7) return { key: "good", icon: "trendUp", cls: "text-viz-green", bg: "bg-viz-green/10 ring-viz-green/30" };
-  if (ratio >= 0.4) return { key: "mid", icon: "minus", cls: "text-viz-amber", bg: "bg-viz-amber/10 ring-viz-amber/30" };
-  return { key: "bad", icon: "trendDown", cls: "text-viz-coral", bg: "bg-viz-coral/10 ring-viz-coral/30" };
 }
 
 export default function DashboardPage() {
@@ -73,19 +65,48 @@ export default function DashboardPage() {
     (checkins || []).forEach((c) => !latestCheckin.has(c.member_id) && latestCheckin.set(c.member_id, c));
     const memberById = new Map((members || []).map((m) => [m.id, m]));
 
+    // Group each member's check-ins (already newest-first) and work out the
+    // weight that preceded each one, so we can show a weight trend.
+    const byMember = new Map();
+    (checkins || []).forEach((c) => {
+      const a = byMember.get(c.member_id) || [];
+      a.push(c);
+      byMember.set(c.member_id, a);
+    });
+    const prevWeightById = new Map();
+    byMember.forEach((arr, mid) => {
+      const startW = latestGoal.get(mid)?.starting_weight_kg ?? null;
+      for (let i = 0; i < arr.length; i++) {
+        let prev = null;
+        for (let j = i + 1; j < arr.length; j++) {
+          if (arr[j].weight_kg != null) { prev = arr[j].weight_kg; break; }
+        }
+        prevWeightById.set(arr[i].id, prev ?? startW);
+      }
+    });
+
     setMe(meRow || null);
     setTeam(meRow?.teams || null);
     setRows(
-      (members || []).map((m) => ({
-        member: m,
-        goal: latestGoal.get(m.id) || null,
-        checkin: latestCheckin.get(m.id) || null,
-      }))
+      (members || []).map((m) => {
+        const checkin = latestCheckin.get(m.id) || null;
+        return {
+          member: m,
+          goal: latestGoal.get(m.id) || null,
+          checkin,
+          prevWeight: checkin ? prevWeightById.get(checkin.id) ?? null : null,
+        };
+      })
     );
     setFeed(
       (checkins || [])
         .slice(0, 20)
-        .map((c) => ({ checkin: c, member: memberById.get(c.member_id) }))
+        .map((c) => ({
+          checkin: c,
+          member: memberById.get(c.member_id),
+          prevWeight: prevWeightById.get(c.id) ?? null,
+          target: latestGoal.get(c.member_id)?.target_weight_kg ?? null,
+        }))
         .filter((x) => x.member)
     );
     setLoading(false);
@@ -234,11 +255,10 @@ export default function DashboardPage() {
             <span className="text-xs text-zinc-500">Logs every {cadence} days</span>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {teammates.map(({ member: m, goal, checkin }) => {
+            {teammates.map(({ member: m, goal, checkin, prevWeight }) => {
               const w = currentWeightOf(m, goal, checkin);
               const since = daysSince(checkin?.checkin_date);
               const logged = since !== null && since <= cadence;
-              const tone = adherenceTone(checkin);
               return (
                 <Link
                   key={m.id}
@@ -250,12 +270,25 @@ export default function DashboardPage() {
                       {m.name?.[0]?.toUpperCase()}
                     </span>
                     <span className="truncate text-sm font-semibold text-zinc-100">{m.name}</span>
-                    {tone && logged && <Icon name={tone.icon} className={`ml-auto h-4 w-4 ${tone.cls}`} />}
                   </div>
-                  <p className="mt-2 text-lg font-bold text-zinc-100">{w != null ? formatKg(w) : "—"}</p>
-                  <p className="text-xs text-zinc-500">
-                    {since === null ? "No check-ins" : !logged ? "Behind" : since === 0 ? "Logged today" : `${since}d ago`}
-                  </p>
+                  <div className="mt-2 flex items-end justify-between gap-2">
+                    <div>
+                      <p className="text-lg font-bold text-zinc-100">{w != null ? formatKg(w) : "—"}</p>
+                      <p className="text-xs text-zinc-500">
+                        {since === null ? "No check-ins" : !logged ? "Behind" : since === 0 ? "Logged today" : `${since}d ago`}
+                      </p>
+                    </div>
+                    {checkin && (
+                      <CheckinTrends
+                        latestWeight={checkin.weight_kg}
+                        prevWeight={prevWeight}
+                        target={goal?.target_weight_kg}
+                        met={checkin.commitments_met}
+                        total={checkin.commitments_total}
+                        size={32}
+                      />
+                    )}
+                  </div>
                 </Link>
               );
             })}
@@ -271,40 +304,39 @@ export default function DashboardPage() {
             No check-ins yet. Tap <span className="font-semibold text-zinc-200">Check in</span> to start the streak.
           </div>
         ) : (
-          feed.map(({ checkin: c, member: m }) => {
-            const tone = adherenceTone(c);
-            return (
-              <Link key={c.id} href={`/member/${m.id}`} className="card block transition hover:ring-white/20">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-flame-500/15 text-sm font-bold text-flame-400 ring-1 ring-flame-500/20">
-                    {m.name?.[0]?.toUpperCase()}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-zinc-100">{m.name}</span>
-                      <span className="text-xs text-zinc-500">{formatDate(c.checkin_date)}</span>
-                    </div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-zinc-400">
-                      {c.weight_kg != null && (
-                        <span className="inline-flex items-center gap-1">
-                          <Icon name="scale" className="h-3.5 w-3.5 text-zinc-500" /> {formatKg(c.weight_kg)}
-                        </span>
-                      )}
-                      {c.commitments_total ? (
-                        <span>{c.commitments_met}/{c.commitments_total} habits kept</span>
-                      ) : null}
-                    </div>
+          feed.map(({ checkin: c, member: m, prevWeight, target }) => (
+            <Link key={c.id} href={`/member/${m.id}`} className="card block transition hover:ring-white/20">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-flame-500/15 text-sm font-bold text-flame-400 ring-1 ring-flame-500/20">
+                  {m.name?.[0]?.toUpperCase()}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-zinc-100">{m.name}</span>
+                    <span className="text-xs text-zinc-500">{formatDate(c.checkin_date)}</span>
                   </div>
-                  {tone && (
-                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-1 ${tone.bg}`}>
-                      <Icon name={tone.icon} className={`h-4 w-4 ${tone.cls}`} />
-                    </span>
-                  )}
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-zinc-400">
+                    {c.weight_kg != null && (
+                      <span className="inline-flex items-center gap-1">
+                        <Icon name="scale" className="h-3.5 w-3.5 text-zinc-500" /> {formatKg(c.weight_kg)}
+                      </span>
+                    )}
+                    {c.commitments_total ? (
+                      <span>{c.commitments_met}/{c.commitments_total} habits kept</span>
+                    ) : null}
+                  </div>
                 </div>
-                {c.notes && <p className="mt-2 line-clamp-2 text-sm text-zinc-400">{c.notes}</p>}
-              </Link>
-            );
-          })
+                <CheckinTrends
+                  latestWeight={c.weight_kg}
+                  prevWeight={prevWeight}
+                  target={target}
+                  met={c.commitments_met}
+                  total={c.commitments_total}
+                />
+              </div>
+              {c.notes && <p className="mt-2 line-clamp-2 text-sm text-zinc-400">{c.notes}</p>}
+            </Link>
+          ))
         )}
       </section>
     </div>
