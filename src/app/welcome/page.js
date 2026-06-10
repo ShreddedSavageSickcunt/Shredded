@@ -7,7 +7,9 @@ import { storeMember, getPendingSignup, clearPendingSignup } from "@/lib/session
 import { useIdentity } from "@/components/useIdentity";
 import ConfigNotice from "@/components/ConfigNotice";
 import Icon from "@/components/Icon";
-import { ACTIVITY_LEVELS, PACES, paceRate, maintenanceCalories, suggestedCalories } from "@/lib/calories";
+import HabitPicker from "@/components/HabitPicker";
+import { ACTIVITY_LEVELS, PACES, paceRate, maintenanceCalories, suggestedCalories, estimateDaysToGoal } from "@/lib/calories";
+import { formatDate, formatDuration, addDays } from "@/lib/format";
 
 function makeJoinCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -16,7 +18,7 @@ function makeJoinCode() {
   return out;
 }
 
-const STEPS = ["Welcome", "About you", "Your goal", "Your squad"];
+const STEPS = ["Welcome", "About you", "Your goal", "Your habits", "Your squad"];
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -27,6 +29,7 @@ export default function WelcomePage() {
   const [error, setError] = useState("");
   const [caloriesTouched, setCaloriesTouched] = useState(false);
   const [pace, setPace] = useState("steady");
+  const [habits, setHabits] = useState([]); // { key, templateId, category, label }
 
   const [form, setForm] = useState({
     name: "",
@@ -88,15 +91,39 @@ export default function WelcomePage() {
     }
   }, [suggested, caloriesTouched]);
 
+  // Estimated time to reach the goal at the chosen pace, and whether it lands
+  // before the target date.
+  const estDays = useMemo(
+    () =>
+      estimateDaysToGoal({
+        currentKg: form.current_weight_kg,
+        targetKg: form.target_weight_kg,
+        rate: paceRate(pace),
+      }),
+    [form.current_weight_kg, form.target_weight_kg, pace]
+  );
+  const projectedDate = estDays ? addDays(estDays) : null;
+  const daysUntilTarget = form.target_date
+    ? Math.ceil((new Date(form.target_date).getTime() - Date.now()) / 86400000)
+    : null;
+  const missesDate = estDays && daysUntilTarget != null && estDays > daysUntilTarget;
+
   const canContinue = () => {
     if (step === 1) return form.name.trim() && form.current_weight_kg;
-    if (step === 3) {
+    if (step === 4) {
       if (form.mode === "create") return form.team_name.trim();
       if (form.mode === "join") return form.join_code.trim();
       return true;
     }
     return true;
   };
+
+  function addHabit(habit) {
+    setHabits((h) => [...h, { ...habit, key: `${Date.now()}-${Math.random()}` }]);
+  }
+  function removeHabit(item) {
+    setHabits((h) => h.filter((x) => x.key !== item.key));
+  }
 
   async function finish() {
     setError("");
@@ -160,6 +187,17 @@ export default function WelcomePage() {
         target_date: form.target_date || null,
         principles: form.principles || null,
       });
+
+      if (habits.length) {
+        await supabase.from("commitments").insert(
+          habits.map((h) => ({
+            member_id: newMember.id,
+            category: h.category,
+            label: h.label,
+            template_id: h.templateId,
+          }))
+        );
+      }
 
       clearPendingSignup();
       storeMember(newMember);
@@ -324,6 +362,24 @@ export default function WelcomePage() {
               )}
             </div>
 
+            {/* Estimated time to reach the goal vs. the target date */}
+            {estDays && (
+              <div className="rounded-2xl bg-ink-850 p-3 text-sm ring-1 ring-white/5">
+                <p className="text-zinc-300">
+                  At this pace you’ll reach your goal in{" "}
+                  <span className="font-semibold text-zinc-100">{formatDuration(estDays)}</span>
+                  {projectedDate ? ` — around ${formatDate(projectedDate)}.` : "."}
+                </p>
+                {daysUntilTarget != null && (
+                  <p className={`mt-1 text-xs font-medium ${missesDate ? "text-viz-coral" : "text-viz-green"}`}>
+                    {missesDate
+                      ? `That lands after your ${formatDate(form.target_date)} target — try a faster pace or move the date.`
+                      : `On track to hit your ${formatDate(form.target_date)} target.`}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div>
               <label className="label">Daily calorie target</label>
               <input
@@ -343,6 +399,16 @@ export default function WelcomePage() {
         )}
 
         {step === 3 && (
+          <div className="space-y-4">
+            <header>
+              <h1 className="text-xl font-bold tracking-tight">Pick your habits</h1>
+              <p className="mt-1 text-sm text-zinc-400">The actions you’ll be held accountable to each check-in.</p>
+            </header>
+            <HabitPicker selected={habits} onAdd={addHabit} onRemove={removeHabit} />
+          </div>
+        )}
+
+        {step === 4 && (
           <div className="space-y-4">
             <header>
               <h1 className="text-xl font-bold tracking-tight">Ride solo or with a squad?</h1>

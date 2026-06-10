@@ -35,6 +35,21 @@ export function goalProgress(starting, target, current) {
   return Math.max(0, Math.min(100, Math.round(pct)));
 }
 
+export function formatDuration(days) {
+  if (days == null) return "";
+  if (days < 14) return `${days} days`;
+  const weeks = Math.round(days / 7);
+  if (weeks < 9) return `about ${weeks} weeks`;
+  const months = Math.round(days / 30.4);
+  return `about ${months} months`;
+}
+
+export function addDays(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
 export const VIBE_LABELS = ["Rough", "Meh", "OK", "Good", "Great"];
 
 export function vibeLabel(rating) {

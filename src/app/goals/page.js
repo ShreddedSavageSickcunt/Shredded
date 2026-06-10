@@ -1,15 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useIdentity } from "@/components/useIdentity";
 import IdentityGate from "@/components/IdentityGate";
-import Icon from "@/components/Icon";
-import { COMMITMENT_TEMPLATES, COMMITMENT_CATEGORIES, resolveLabel } from "@/lib/commitments";
+import HabitPicker from "@/components/HabitPicker";
 
 function GoalsInner() {
-  const router = useRouter();
   const { member } = useIdentity();
 
   const [form, setForm] = useState({
@@ -23,11 +20,7 @@ function GoalsInner() {
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-
-  // Habits
   const [commitments, setCommitments] = useState([]);
-  const [vals, setVals] = useState({}); // templateId -> chosen number
-  const [picking, setPicking] = useState(false);
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
@@ -83,18 +76,25 @@ function GoalsInner() {
     setTimeout(() => setSaved(false), 1800);
   }
 
-  async function addCommitment(t) {
-    const v = vals[t.id] ?? t.target?.default;
+  const selected = commitments.map((c) => ({
+    key: c.id,
+    templateId: c.template_id,
+    category: c.category,
+    label: c.label,
+  }));
+
+  async function addHabit(habit) {
     await supabase.from("commitments").insert({
       member_id: member.id,
-      category: t.category,
-      label: resolveLabel(t, v),
+      category: habit.category,
+      label: habit.label,
+      template_id: habit.templateId,
     });
     await loadCommitments();
   }
 
-  async function removeCommitment(id) {
-    await supabase.from("commitments").delete().eq("id", id);
+  async function removeHabit(item) {
+    await supabase.from("commitments").delete().eq("id", item.key);
     await loadCommitments();
   }
 
@@ -107,7 +107,6 @@ function GoalsInner() {
         <p className="mt-1 text-sm text-zinc-400">Set your target, then choose the habits that get you there.</p>
       </header>
 
-      {/* Goal */}
       <form onSubmit={handleSubmit} className="card space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -138,68 +137,12 @@ function GoalsInner() {
         <button className="btn-primary w-full" disabled={busy}>{busy ? "Saving…" : "Save goal"}</button>
       </form>
 
-      {/* Habits */}
       <section className="card space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold text-zinc-100">Your habits</h2>
-            <p className="text-sm text-zinc-400">The actions you’ll be held accountable to each check-in.</p>
-          </div>
-          <button onClick={() => setPicking((p) => !p)} className="btn-ghost !px-3 !py-2 text-sm">
-            <Icon name={picking ? "chevronDown" : "plus"} className="h-4 w-4" />
-            {picking ? "Done" : "Add"}
-          </button>
+        <div>
+          <h2 className="font-semibold text-zinc-100">Your habits</h2>
+          <p className="text-sm text-zinc-400">The actions you’ll be held accountable to each check-in.</p>
         </div>
-
-        {commitments.length === 0 ? (
-          <p className="rounded-2xl bg-ink-850 p-4 text-sm text-zinc-400 ring-1 ring-white/5">
-            No habits yet. Tap <span className="font-semibold text-zinc-200">Add</span> to choose some.
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {commitments.map((c) => (
-              <li key={c.id} className="flex items-center gap-3 rounded-2xl bg-ink-850 p-3 ring-1 ring-white/5">
-                <span className="chip">{c.category}</span>
-                <span className="flex-1 text-sm font-medium text-zinc-200">{c.label}</span>
-                <button onClick={() => removeCommitment(c.id)} className="rounded-lg p-1 text-zinc-500 hover:bg-ink-800 hover:text-red-400" title="Remove">
-                  <Icon name="plus" className="h-4 w-4 rotate-45" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {/* Template picker */}
-        {picking && (
-          <div className="space-y-4 border-t border-white/10 pt-4">
-            {COMMITMENT_CATEGORIES.map((cat) => (
-              <div key={cat}>
-                <p className="stat-label mb-2">{cat}</p>
-                <div className="space-y-2">
-                  {COMMITMENT_TEMPLATES.filter((t) => t.category === cat).map((t) => (
-                    <div key={t.id} className="flex items-center gap-2 rounded-2xl bg-ink-850 p-2.5 ring-1 ring-white/5">
-                      <span className="flex-1 text-sm text-zinc-300">{resolveLabel(t, vals[t.id] ?? t.target?.default)}</span>
-                      {t.target && (
-                        <input
-                          type="number"
-                          min={t.target.min}
-                          max={t.target.max}
-                          step={t.target.step}
-                          value={vals[t.id] ?? t.target.default}
-                          onChange={(e) => setVals((v) => ({ ...v, [t.id]: e.target.value }))}
-                          className="w-20 rounded-lg bg-ink-800 px-2 py-1 text-sm text-zinc-100 ring-1 ring-inset ring-white/10 focus:outline-none focus:ring-2 focus:ring-flame-500"
-                        />
-                      )}
-                      <button onClick={() => addCommitment(t)} className="rounded-lg bg-flame-500/15 px-2.5 py-1.5 text-sm font-semibold text-flame-400 hover:bg-flame-500/25">
-                        Add
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <HabitPicker selected={selected} onAdd={addHabit} onRemove={removeHabit} />
       </section>
     </div>
   );

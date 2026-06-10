@@ -76,3 +76,16 @@ export function suggestedCalories({ maintenance, currentKg, targetKg, sex, rate 
   const adjusted = t < c ? maintenance - r : maintenance + r;
   return Math.max(floor, Math.round(adjusted));
 }
+
+// Roughly how many days to reach the goal at a given daily deficit/surplus.
+// 1 kg of body weight ≈ 7700 kcal.
+export function estimateDaysToGoal({ currentKg, targetKg, rate }) {
+  const c = Number(currentKg);
+  const t = Number(targetKg);
+  const r = Number(rate);
+  if (!c || !t || !r || Math.abs(c - t) < 0.5) return null;
+  const weeklyKg = (r * 7) / 7700;
+  if (weeklyKg <= 0) return null;
+  const weeks = Math.abs(c - t) / weeklyKg;
+  return Math.ceil(weeks * 7);
+}
