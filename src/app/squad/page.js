@@ -35,6 +35,7 @@ function SquadInner() {
   const [name, setName] = useState("");
   const [cadence, setCadence] = useState(7);
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const load = useCallback(async () => {
     const { data: meRow } = await supabase
@@ -104,6 +105,13 @@ function SquadInner() {
     setTimeout(() => setCopied(false), 1500);
   }
 
+  function copyLink() {
+    const link = `${window.location.origin}/join/${team.join_code}`;
+    navigator.clipboard?.writeText(link);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 1500);
+  }
+
   if (loading) return <div className="py-16 text-center text-zinc-500">Loading…</div>;
 
   // ----- Solo: create or join -----
@@ -151,14 +159,20 @@ function SquadInner() {
       <h1 className="text-2xl font-bold tracking-tight">Squad settings</h1>
       {msg && <p className="rounded-2xl bg-ink-850 px-4 py-2 text-sm font-medium ring-1 ring-white/10">{msg}</p>}
 
-      {/* Invite code */}
+      {/* Invite */}
       <section className="card">
         <p className="stat-label">Invite code</p>
         <div className="mt-2 flex items-center gap-3">
           <span className="font-mono text-2xl font-bold tracking-[0.3em] text-flame-400">{team.join_code}</span>
           <button onClick={copyCode} className="btn-ghost !px-3 !py-2 text-sm">{copied ? "Copied" : "Copy"}</button>
         </div>
-        <p className="mt-2 text-xs text-zinc-500">Share this with friends so they can join your squad.</p>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <button onClick={copyLink} className="btn-primary !px-3 !py-2 text-sm">
+            <Icon name="users" className="h-4 w-4" />
+            {linkCopied ? "Link copied" : "Copy invite link"}
+          </button>
+          <span className="text-xs text-zinc-500">Friends register straight into your squad.</span>
+        </div>
       </section>
 
       {/* Settings */}

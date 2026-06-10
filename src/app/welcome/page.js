@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase, isSupabaseConfigured } from "@/lib/supabaseClient";
-import { storeMember, getPendingSignup, clearPendingSignup } from "@/lib/session";
+import { storeMember, getPendingSignup, clearPendingSignup, getInvite, clearInvite } from "@/lib/session";
 import { useIdentity } from "@/components/useIdentity";
 import ConfigNotice from "@/components/ConfigNotice";
 import Icon from "@/components/Icon";
@@ -30,6 +30,7 @@ export default function WelcomePage() {
   const [caloriesTouched, setCaloriesTouched] = useState(false);
   const [pace, setPace] = useState("steady");
   const [habits, setHabits] = useState([]); // { key, templateId, category, label }
+  const [inviteName, setInviteName] = useState(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -57,7 +58,16 @@ export default function WelcomePage() {
     }
     const p = getPendingSignup();
     setPending(p);
-    if (!p) router.replace("/login");
+    if (!p) {
+      router.replace("/login");
+      return;
+    }
+    // Joining via an invite link → pre-select the squad.
+    const inv = getInvite();
+    if (inv) {
+      setInviteName(inv.teamName);
+      setForm((f) => ({ ...f, mode: "join", join_code: inv.code }));
+    }
   }, [ready, member, router]);
 
   // Live calorie maths from the entered details.
@@ -200,6 +210,7 @@ export default function WelcomePage() {
       }
 
       clearPendingSignup();
+      clearInvite();
       storeMember(newMember);
       router.replace("/");
     } catch (err) {
@@ -414,6 +425,12 @@ export default function WelcomePage() {
               <h1 className="text-xl font-bold tracking-tight">Ride solo or with a squad?</h1>
               <p className="mt-1 text-sm text-zinc-400">You can create or join a squad any time later, too.</p>
             </header>
+
+            {inviteName && (
+              <div className="rounded-2xl bg-flame-500/10 px-3 py-2 text-sm text-flame-300 ring-1 ring-flame-500/20">
+                You’re joining <span className="font-semibold">{inviteName}</span> from an invite link.
+              </div>
+            )}
 
             <div className="space-y-2">
               {[

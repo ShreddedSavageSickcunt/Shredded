@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase, isSupabaseConfigured } from "@/lib/supabaseClient";
-import { storeMember, setPendingSignup } from "@/lib/session";
+import { storeMember, setPendingSignup, getInvite, clearInvite } from "@/lib/session";
 import { useIdentity } from "@/components/useIdentity";
 import ConfigNotice from "@/components/ConfigNotice";
 import Icon from "@/components/Icon";
@@ -15,6 +15,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [invite, setInviteState] = useState(null);
+
+  useEffect(() => setInviteState(getInvite()), []);
 
   // Already signed in on this device → straight to the app.
   useEffect(() => {
@@ -53,6 +56,17 @@ export default function LoginPage() {
         setError("Incorrect password for that username.");
         return;
       }
+      // Followed an invite link → drop them into that squad.
+      const inv = getInvite();
+      if (inv) {
+        const { data: team } = await supabase
+          .from("teams")
+          .select("id")
+          .ilike("join_code", inv.code)
+          .maybeSingle();
+        if (team) await supabase.from("members").update({ team_id: team.id }).eq("id", existing.id);
+        clearInvite();
+      }
       storeMember(existing);
       router.replace("/");
       return;
@@ -78,6 +92,12 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold tracking-tight">Shredded</h1>
         <p className="mt-1 text-sm text-zinc-400">Sign in, or pick a username to get started.</p>
       </div>
+
+      {invite && (
+        <div className="mb-4 rounded-2xl bg-flame-500/10 px-4 py-3 text-center text-sm text-flame-300 ring-1 ring-flame-500/20">
+          You’re joining <span className="font-semibold">{invite.teamName}</span>. Sign in or create an account to continue.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="card space-y-4">
         <div>

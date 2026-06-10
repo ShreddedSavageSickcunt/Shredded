@@ -6,6 +6,7 @@
 
 const STORAGE_KEY = "shredded:member";
 const PENDING_KEY = "shredded:pending";
+const INVITE_KEY = "shredded:invite";
 
 export function getStoredMember() {
   if (typeof window === "undefined") return null;
@@ -57,4 +58,26 @@ export function setPendingSignup(creds) {
 export function clearPendingSignup() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(PENDING_KEY);
+}
+
+// A "pending invite" remembers which squad a person is joining (from an invite
+// link) through the login / onboarding flow.
+export function getInvite() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(INVITE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setInvite(invite) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(INVITE_KEY, JSON.stringify(invite));
+}
+
+export function clearInvite() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(INVITE_KEY);
 }
