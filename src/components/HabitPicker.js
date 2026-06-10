@@ -31,9 +31,11 @@ export default function HabitPicker({ selected, onAdd, onRemove }) {
 
   return (
     <div className="space-y-4">
-      <p className="rounded-2xl bg-flame-500/10 px-3 py-2 text-xs text-flame-300/90 ring-1 ring-flame-500/20">
-        Try adding around 3 habits to start — you can always add or remove them later.
-      </p>
+      {selected.length < 3 && (
+        <p className="rounded-2xl bg-flame-500/10 px-3 py-2 text-xs text-flame-300/90 ring-1 ring-flame-500/20">
+          Try adding around 3 habits to start — you can always add or remove them later.
+        </p>
+      )}
 
       {selected.length > 0 && (
         <ul className="space-y-2">

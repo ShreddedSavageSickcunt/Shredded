@@ -84,18 +84,33 @@ function GoalsInner() {
   }));
 
   async function addHabit(habit) {
-    await supabase.from("commitments").insert({
-      member_id: member.id,
-      category: habit.category,
-      label: habit.label,
-      template_id: habit.templateId,
-    });
-    await loadCommitments();
+    // Optimistic: show it instantly, persist in the background.
+    const tempId = `temp-${Date.now()}`;
+    setCommitments((cs) => [
+      ...cs,
+      { id: tempId, member_id: member.id, category: habit.category, label: habit.label, template_id: habit.templateId },
+    ]);
+
+    const base = { member_id: member.id, category: habit.category, label: habit.label };
+    let { data, error } = await supabase
+      .from("commitments")
+      .insert({ ...base, template_id: habit.templateId })
+      .select("id")
+      .single();
+    // Fall back if migration 0004 (template_id) hasn't been run yet.
+    if (error && /template_id/i.test(error.message || "")) {
+      ({ data, error } = await supabase.from("commitments").insert(base).select("id").single());
+    }
+    if (error) {
+      setCommitments((cs) => cs.filter((c) => c.id !== tempId)); // revert
+      return;
+    }
+    setCommitments((cs) => cs.map((c) => (c.id === tempId ? { ...c, id: data.id } : c)));
   }
 
   async function removeHabit(item) {
+    setCommitments((cs) => cs.filter((c) => c.id !== item.key)); // optimistic
     await supabase.from("commitments").delete().eq("id", item.key);
-    await loadCommitments();
   }
 
   if (loading) return <div className="py-16 text-center text-zinc-500">Loading…</div>;
