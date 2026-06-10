@@ -7,7 +7,7 @@ import { storeMember, getPendingSignup, clearPendingSignup } from "@/lib/session
 import { useIdentity } from "@/components/useIdentity";
 import ConfigNotice from "@/components/ConfigNotice";
 import Icon from "@/components/Icon";
-import { ACTIVITY_LEVELS, maintenanceCalories, suggestedCalories } from "@/lib/calories";
+import { ACTIVITY_LEVELS, PACES, paceRate, maintenanceCalories, suggestedCalories } from "@/lib/calories";
 
 function makeJoinCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -26,6 +26,7 @@ export default function WelcomePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [caloriesTouched, setCaloriesTouched] = useState(false);
+  const [pace, setPace] = useState("steady");
 
   const [form, setForm] = useState({
     name: "",
@@ -75,8 +76,9 @@ export default function WelcomePage() {
         currentKg: form.current_weight_kg,
         targetKg: form.target_weight_kg,
         sex: form.sex,
+        rate: paceRate(pace),
       }),
-    [maintenance, form.current_weight_kg, form.target_weight_kg, form.sex]
+    [maintenance, form.current_weight_kg, form.target_weight_kg, form.sex, pace]
   );
 
   // The target follows the calculator's suggestion until the user overrides it.
@@ -246,7 +248,7 @@ export default function WelcomePage() {
               <select className="input" value={form.activity_factor} onChange={set("activity_factor")}>
                 {ACTIVITY_LEVELS.map((a) => (
                   <option key={a.factor} value={a.factor}>
-                    {a.label} ({a.factor})
+                    {a.label}
                   </option>
                 ))}
               </select>
@@ -274,6 +276,31 @@ export default function WelcomePage() {
               </div>
             </div>
 
+            {/* Pace — how aggressively to chase the goal */}
+            <div>
+              <label className="label">How aggressively?</label>
+              <div className="grid grid-cols-3 gap-2">
+                {PACES.map((p) => {
+                  const active = pace === p.key;
+                  return (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() => setPace(p.key)}
+                      className={`rounded-2xl px-2 py-2.5 text-center ring-1 transition ${
+                        active ? "bg-flame-500/10 ring-flame-500/50" : "bg-ink-850 ring-white/10 hover:bg-ink-800"
+                      }`}
+                    >
+                      <span className={`block text-sm font-semibold ${active ? "text-flame-400" : "text-zinc-200"}`}>
+                        {p.label}
+                      </span>
+                      <span className="block text-[11px] text-zinc-500">{p.weekly}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Calorie calculator */}
             <div className="rounded-2xl bg-ink-850 p-4 ring-1 ring-white/5">
               {maintenance ? (
@@ -287,7 +314,7 @@ export default function WelcomePage() {
                     <span className="font-bold text-flame-400">{suggested} kcal</span>
                   </div>
                   <p className="mt-2 text-xs text-zinc-500">
-                    Mifflin–St Jeor × activity {form.activity_factor}. Adjust the target below if you like.
+                    Mifflin–St Jeor maintenance, minus your pace. Adjust the target below any time.
                   </p>
                 </>
               ) : (

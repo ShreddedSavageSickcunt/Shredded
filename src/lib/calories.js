@@ -2,19 +2,50 @@
 //   BMR = 10*kg + 6.25*cm - 5*age + s   (s = +5 male, -161 female)
 //   Maintenance (TDEE) = BMR * activity factor
 
-// Activity factors + descriptions (from the provided breakdown).
+// Activity levels, sedentary and up, described in plain everyday terms.
 export const ACTIVITY_LEVELS = [
-  { factor: 1.0, label: "Completely paralyzed / comatose", desc: "Unable to move without aid of others" },
-  { factor: 1.05, label: "Immobile / bedridden", desc: "Stationary, some arm movement, partially paralyzed" },
-  { factor: 1.1, label: "Constricted lifestyle", desc: "Confined space, almost always sitting or laying" },
-  { factor: 1.16, label: "Work from home, no exercise", desc: "Little to no travel, some walking, mostly sitting" },
-  { factor: 1.2, label: "Sedentary", desc: "Little/no exercise, moderate walking, desk job away from home" },
-  { factor: 1.375, label: "Slightly active", desc: "Light sport 1–3 days/wk, jog or walk 3–4 days/wk" },
-  { factor: 1.425, label: "Lightly active", desc: "Moderate sport 2–3 days/wk, jog or walk 5–7 days/wk" },
-  { factor: 1.55, label: "Moderately active", desc: "Physical work or sport 4–5 days/wk, e.g. construction" },
-  { factor: 1.75, label: "Very active", desc: "Heavy physical work or sport 6–7 days/wk, hard laborer" },
-  { factor: 1.9, label: "Extremely active", desc: "Very heavy work or daily training, pro/Olympic athlete" },
+  {
+    factor: 1.2,
+    label: "Mostly sitting, little to no exercise",
+    desc: "Desk job and not much movement through the day",
+  },
+  {
+    factor: 1.375,
+    label: "The odd workout or walk most weeks",
+    desc: "Light exercise or sport 1–3 days a week",
+  },
+  {
+    factor: 1.425,
+    label: "Walks regularly and hits the gym a few times a week",
+    desc: "Active most days at a moderate level",
+  },
+  {
+    factor: 1.55,
+    label: "Trains hard 4–5 days a week, or a physical job",
+    desc: "Consistent exercise or on your feet at work",
+  },
+  {
+    factor: 1.75,
+    label: "Intense training almost every day",
+    desc: "Hard workouts 6–7 days a week, or heavy labour",
+  },
+  {
+    factor: 1.9,
+    label: "Athlete-level training or very physical job",
+    desc: "Twice-a-day sessions or extremely demanding work",
+  },
 ];
+
+// How aggressively to push toward the goal (kcal/day adjustment).
+export const PACES = [
+  { key: "gentle", label: "Gentle", rate: 250, weekly: "~0.25 kg/week" },
+  { key: "steady", label: "Steady", rate: 500, weekly: "~0.5 kg/week" },
+  { key: "aggressive", label: "Aggressive", rate: 750, weekly: "~0.7 kg/week" },
+];
+
+export function paceRate(key) {
+  return (PACES.find((p) => p.key === key) || PACES[1]).rate;
+}
 
 export function bmrMifflin({ sex, weightKg, heightCm, age }) {
   const w = Number(weightKg);
@@ -32,15 +63,16 @@ export function maintenanceCalories({ sex, weightKg, heightCm, age, activityFact
   return Math.round(bmr * f);
 }
 
-// Suggested intake to move toward a goal weight. ~500 kcal/day deficit for
-// loss (≈0.5 kg/week), surplus for a gain, maintenance if roughly there.
+// Suggested intake to move toward a goal weight. The chosen pace sets the daily
+// deficit (for loss) or surplus (for gain). Maintenance if roughly there.
 // Floored at a sensible minimum so we never suggest something unsafe.
-export function suggestedCalories({ maintenance, currentKg, targetKg, sex }) {
+export function suggestedCalories({ maintenance, currentKg, targetKg, sex, rate = 500 }) {
   if (!maintenance) return null;
   const floor = sex === "female" ? 1200 : 1500;
   const c = Number(currentKg);
   const t = Number(targetKg);
+  const r = Number(rate) || 500;
   if (!c || !t || Math.abs(c - t) < 0.5) return maintenance;
-  const adjusted = t < c ? maintenance - 500 : maintenance + 300;
+  const adjusted = t < c ? maintenance - r : maintenance + r;
   return Math.max(floor, Math.round(adjusted));
 }
