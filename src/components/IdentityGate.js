@@ -12,7 +12,7 @@ export default function IdentityGate({ children }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (ready && !member) router.replace("/welcome");
+    if (ready && !member) router.replace("/login");
   }, [ready, member, router]);
 
   if (!ready || !member) {

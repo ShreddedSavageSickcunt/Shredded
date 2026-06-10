@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase, isSupabaseConfigured } from "@/lib/supabaseClient";
-import { storeMember } from "@/lib/session";
+import { storeMember, getPendingSignup, clearPendingSignup } from "@/lib/session";
 import { useIdentity } from "@/components/useIdentity";
 import ConfigNotice from "@/components/ConfigNotice";
 import Icon from "@/components/Icon";
+import { ACTIVITY_LEVELS, maintenanceCalories, suggestedCalories } from "@/lib/calories";
 
 function makeJoinCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -20,29 +21,70 @@ const STEPS = ["Welcome", "About you", "Your goal", "Your squad"];
 export default function WelcomePage() {
   const router = useRouter();
   const { member, ready } = useIdentity();
+  const [pending, setPending] = useState(undefined); // undefined = not checked yet
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [caloriesTouched, setCaloriesTouched] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
     age: "",
+    sex: "male",
     height_cm: "",
     current_weight_kg: "",
+    activity_factor: "1.2",
     target_weight_kg: "",
     target_date: "",
     daily_calorie_target: "",
     principles: "",
-    mode: "solo", // solo | create | join
+    mode: "solo",
     team_name: "",
     join_code: "",
   });
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  // Already onboarded on this device → straight to the dashboard.
+  // Gate: signed in → home; no pending signup → back to login.
   useEffect(() => {
-    if (ready && member) router.replace("/");
+    if (!ready) return;
+    if (member) {
+      router.replace("/");
+      return;
+    }
+    const p = getPendingSignup();
+    setPending(p);
+    if (!p) router.replace("/login");
   }, [ready, member, router]);
+
+  // Live calorie maths from the entered details.
+  const maintenance = useMemo(
+    () =>
+      maintenanceCalories({
+        sex: form.sex,
+        weightKg: form.current_weight_kg,
+        heightCm: form.height_cm,
+        age: form.age,
+        activityFactor: form.activity_factor,
+      }),
+    [form.sex, form.current_weight_kg, form.height_cm, form.age, form.activity_factor]
+  );
+  const suggested = useMemo(
+    () =>
+      suggestedCalories({
+        maintenance,
+        currentKg: form.current_weight_kg,
+        targetKg: form.target_weight_kg,
+        sex: form.sex,
+      }),
+    [maintenance, form.current_weight_kg, form.target_weight_kg, form.sex]
+  );
+
+  // The target follows the calculator's suggestion until the user overrides it.
+  useEffect(() => {
+    if (!caloriesTouched && suggested) {
+      setForm((f) => ({ ...f, daily_calorie_target: String(suggested) }));
+    }
+  }, [suggested, caloriesTouched]);
 
   const canContinue = () => {
     if (step === 1) return form.name.trim() && form.current_weight_kg;
@@ -92,10 +134,14 @@ export default function WelcomePage() {
       const { data: newMember, error: mErr } = await supabase
         .from("members")
         .insert({
+          username: pending?.username || null,
+          password: pending?.password || null,
           name: form.name.trim(),
           age: form.age ? Number(form.age) : null,
+          sex: form.sex,
           height_cm: form.height_cm ? Number(form.height_cm) : null,
           current_weight_kg: form.current_weight_kg ? Number(form.current_weight_kg) : null,
+          activity_factor: form.activity_factor ? Number(form.activity_factor) : null,
           team_id,
           is_admin,
           join_date: new Date().toISOString().slice(0, 10),
@@ -113,6 +159,7 @@ export default function WelcomePage() {
         principles: form.principles || null,
       });
 
+      clearPendingSignup();
       storeMember(newMember);
       router.replace("/");
     } catch (err) {
@@ -121,7 +168,7 @@ export default function WelcomePage() {
     }
   }
 
-  if (!ready || member) {
+  if (!ready || member || pending === undefined || !pending) {
     return <div className="py-24 text-center text-zinc-500">Loading…</div>;
   }
 
@@ -159,13 +206,28 @@ export default function WelcomePage() {
           <div className="space-y-4">
             <header>
               <h1 className="text-xl font-bold tracking-tight">A bit about you</h1>
-              <p className="mt-1 text-sm text-zinc-400">This stays between you and your squad.</p>
+              <p className="mt-1 text-sm text-zinc-400">We use this to calculate your calories.</p>
             </header>
             <div>
               <label className="label">What should we call you?</label>
               <input className="input" value={form.name} onChange={set("name")} placeholder="First name" autoFocus />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Sex <span className="text-zinc-600">(for the calorie formula)</span></label>
+              <div className="seg w-full">
+                {["male", "female"].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, sex: s }))}
+                    className={`seg-item flex-1 capitalize ${form.sex === s ? "seg-item-active" : ""}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="label">Age</label>
                 <input type="number" inputMode="numeric" className="input" value={form.age} onChange={set("age")} placeholder="29" />
@@ -174,10 +236,23 @@ export default function WelcomePage() {
                 <label className="label">Height (cm)</label>
                 <input type="number" inputMode="decimal" className="input" value={form.height_cm} onChange={set("height_cm")} placeholder="178" />
               </div>
+              <div>
+                <label className="label">Weight (kg)</label>
+                <input type="number" step="0.1" inputMode="decimal" className="input" value={form.current_weight_kg} onChange={set("current_weight_kg")} placeholder="82.5" />
+              </div>
             </div>
             <div>
-              <label className="label">Current weight (kg)</label>
-              <input type="number" step="0.1" inputMode="decimal" className="input" value={form.current_weight_kg} onChange={set("current_weight_kg")} placeholder="82.5" />
+              <label className="label">How active are you?</label>
+              <select className="input" value={form.activity_factor} onChange={set("activity_factor")}>
+                {ACTIVITY_LEVELS.map((a) => (
+                  <option key={a.factor} value={a.factor}>
+                    {a.label} ({a.factor})
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-zinc-500">
+                {ACTIVITY_LEVELS.find((a) => String(a.factor) === String(form.activity_factor))?.desc}
+              </p>
             </div>
           </div>
         )}
@@ -198,9 +273,40 @@ export default function WelcomePage() {
                 <input type="date" className="input" value={form.target_date} onChange={set("target_date")} />
               </div>
             </div>
+
+            {/* Calorie calculator */}
+            <div className="rounded-2xl bg-ink-850 p-4 ring-1 ring-white/5">
+              {maintenance ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-400">Maintenance</span>
+                    <span className="font-semibold text-zinc-200">{maintenance} kcal</span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between">
+                    <span className="text-sm text-zinc-400">Suggested for your goal</span>
+                    <span className="font-bold text-flame-400">{suggested} kcal</span>
+                  </div>
+                  <p className="mt-2 text-xs text-zinc-500">
+                    Mifflin–St Jeor × activity {form.activity_factor}. Adjust the target below if you like.
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-zinc-400">
+                  Add your age, height, weight and activity level to calculate your calories.
+                </p>
+              )}
+            </div>
+
             <div>
               <label className="label">Daily calorie target</label>
-              <input type="number" inputMode="numeric" className="input" value={form.daily_calorie_target} onChange={set("daily_calorie_target")} placeholder="2000" />
+              <input
+                type="number"
+                inputMode="numeric"
+                className="input"
+                value={form.daily_calorie_target}
+                onChange={(e) => { setCaloriesTouched(true); setForm((f) => ({ ...f, daily_calorie_target: e.target.value })); }}
+                placeholder="2000"
+              />
             </div>
             <div>
               <label className="label">Your approach <span className="text-zinc-600">(optional)</span></label>
@@ -265,7 +371,6 @@ export default function WelcomePage() {
 
         {error && <p className="mt-4 text-sm font-medium text-red-400">{error}</p>}
 
-        {/* Nav */}
         <div className="mt-6 flex items-center gap-3">
           {step > 0 && (
             <button onClick={() => setStep((s) => s - 1)} className="btn-ghost flex-1" disabled={busy}>

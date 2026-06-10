@@ -32,8 +32,8 @@ export default function Nav() {
       });
   }, [member]);
 
-  // Hide the app chrome on the onboarding screen.
-  if (pathname === "/welcome") return null;
+  // Hide the app chrome on the login + onboarding screens.
+  if (pathname === "/login" || pathname === "/welcome") return null;
 
   return (
     <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-ink-950/70 backdrop-blur-xl">

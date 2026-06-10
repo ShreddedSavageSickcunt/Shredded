@@ -78,7 +78,7 @@ export default function DashboardPage() {
   }, [member]);
 
   useEffect(() => {
-    if (ready && !member) router.replace("/welcome");
+    if (ready && !member) router.replace("/login");
   }, [ready, member, router]);
 
   useEffect(() => {
