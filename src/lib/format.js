@@ -35,9 +35,9 @@ export function goalProgress(starting, target, current) {
   return Math.max(0, Math.min(100, Math.round(pct)));
 }
 
-export const VIBES = ["😩", "😕", "😐", "🙂", "🤩"];
+export const VIBE_LABELS = ["Rough", "Meh", "OK", "Good", "Great"];
 
-export function vibeEmoji(rating) {
+export function vibeLabel(rating) {
   if (!rating) return "";
-  return VIBES[Math.max(1, Math.min(5, rating)) - 1];
+  return VIBE_LABELS[Math.max(1, Math.min(5, rating)) - 1];
 }

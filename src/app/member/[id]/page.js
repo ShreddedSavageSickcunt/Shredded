@@ -6,7 +6,8 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 import { useIdentity } from "@/components/useIdentity";
 import ConfigNotice from "@/components/ConfigNotice";
-import { formatDate, formatKg, goalProgress, vibeEmoji } from "@/lib/format";
+import Icon from "@/components/Icon";
+import { formatDate, formatKg, goalProgress, vibeLabel } from "@/lib/format";
 
 const REACTIONS = ["🔥", "💪", "❤️", "👏", "🚀"];
 
@@ -134,12 +135,22 @@ export default function MemberProfilePage({ params }) {
             return (
               <article key={c.id} className="card space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="font-bold text-zinc-100">{formatDate(c.checkin_date)}</p>
-                  <span className="text-2xl">{vibeEmoji(c.vibe_rating)}</span>
+                  <p className="font-semibold text-zinc-100">{formatDate(c.checkin_date)}</p>
+                  {c.vibe_rating != null && (
+                    <span className="chip">{vibeLabel(c.vibe_rating)}</span>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-zinc-300">
-                  {c.weight_kg != null && <span>⚖️ {formatKg(c.weight_kg)}</span>}
-                  {c.calories_consumed != null && <span>🍽️ {c.calories_consumed} cal/day</span>}
+                  {c.weight_kg != null && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Icon name="scale" className="h-4 w-4 text-zinc-500" /> {formatKg(c.weight_kg)}
+                    </span>
+                  )}
+                  {c.calories_consumed != null && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Icon name="spark" className="h-4 w-4 text-zinc-500" /> {c.calories_consumed} cal/day
+                    </span>
+                  )}
                 </div>
                 {c.notes && <p className="whitespace-pre-wrap text-zinc-200">{c.notes}</p>}
                 {c.photo_url && (

@@ -12,6 +12,7 @@ function GoalForm() {
   const [form, setForm] = useState({
     starting_weight_kg: "",
     target_weight_kg: "",
+    target_date: "",
     daily_calorie_target: "",
     principles: "",
   });
@@ -33,6 +34,7 @@ function GoalForm() {
         setForm({
           starting_weight_kg: data.starting_weight_kg ?? "",
           target_weight_kg: data.target_weight_kg ?? "",
+          target_date: data.target_date ?? "",
           daily_calorie_target: data.daily_calorie_target ?? "",
           principles: data.principles ?? "",
         });
@@ -52,6 +54,7 @@ function GoalForm() {
       member_id: member.id,
       starting_weight_kg: form.starting_weight_kg ? Number(form.starting_weight_kg) : null,
       target_weight_kg: form.target_weight_kg ? Number(form.target_weight_kg) : null,
+      target_date: form.target_date || null,
       daily_calorie_target: form.daily_calorie_target ? Number(form.daily_calorie_target) : null,
       principles: form.principles || null,
     });
@@ -68,7 +71,7 @@ function GoalForm() {
 
   return (
     <div className="mx-auto max-w-md">
-      <h1 className="mb-1 text-2xl font-extrabold">🎯 Your goal</h1>
+      <h1 className="mb-1 text-2xl font-bold tracking-tight">Your goal</h1>
       <p className="mb-5 text-sm text-zinc-400">Set the target you’re chasing and the rules you live by.</p>
 
       <form onSubmit={handleSubmit} className="card space-y-4">
@@ -83,9 +86,15 @@ function GoalForm() {
           </div>
         </div>
 
-        <div>
-          <label className="label">Daily calorie target</label>
-          <input type="number" inputMode="numeric" className="input" value={form.daily_calorie_target} onChange={set("daily_calorie_target")} placeholder="2000" />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">Daily calorie target</label>
+            <input type="number" inputMode="numeric" className="input" value={form.daily_calorie_target} onChange={set("daily_calorie_target")} placeholder="2000" />
+          </div>
+          <div>
+            <label className="label">Target date</label>
+            <input type="date" className="input" value={form.target_date} onChange={set("target_date")} />
+          </div>
         </div>
 
         <div>
@@ -98,7 +107,7 @@ function GoalForm() {
         {saved && <p className="text-sm font-medium text-emerald-400">Saved! Redirecting…</p>}
 
         <button className="btn-primary w-full" disabled={busy}>
-          {busy ? "Saving…" : "Save my goal 💪"}
+          {busy ? "Saving…" : "Save goal"}
         </button>
       </form>
     </div>

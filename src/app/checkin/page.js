@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase, PHOTO_BUCKET } from "@/lib/supabaseClient";
 import { useIdentity } from "@/components/useIdentity";
 import IdentityGate from "@/components/IdentityGate";
-import { VIBES } from "@/lib/format";
+import { VIBE_LABELS } from "@/lib/format";
 
 function CheckinForm() {
   const router = useRouter();
@@ -63,8 +63,8 @@ function CheckinForm() {
 
   return (
     <div className="mx-auto max-w-md">
-      <h1 className="mb-1 text-2xl font-extrabold">✅ Check in, {member.name}!</h1>
-      <p className="mb-5 text-sm text-zinc-400">How did the week go? Be honest — the squad’s got you.</p>
+      <h1 className="mb-1 text-2xl font-bold tracking-tight">Check in, {member.name}</h1>
+      <p className="mb-5 text-sm text-zinc-400">How did the period go? Be honest — the squad’s got you.</p>
 
       <form onSubmit={handleSubmit} className="card space-y-4">
         <div className="grid grid-cols-2 gap-3">
@@ -84,9 +84,9 @@ function CheckinForm() {
         </div>
 
         <div>
-          <label className="label">How was the vibe?</label>
-          <div className="flex justify-between gap-1">
-            {VIBES.map((emoji, i) => {
+          <label className="label">How did it feel?</label>
+          <div className="flex gap-1.5">
+            {VIBE_LABELS.map((lbl, i) => {
               const rating = i + 1;
               const active = Number(form.vibe_rating) === rating;
               return (
@@ -94,12 +94,13 @@ function CheckinForm() {
                   type="button"
                   key={rating}
                   onClick={() => setForm({ ...form, vibe_rating: rating })}
-                  className={`flex-1 rounded-2xl py-3 text-2xl transition ${
-                    active ? "bg-flame-500/20 ring-2 ring-flame-500 scale-110" : "bg-ink-850 hover:bg-ink-800"
+                  className={`flex-1 rounded-xl py-2.5 text-xs font-semibold transition ${
+                    active
+                      ? "bg-flame-500/15 text-flame-400 ring-1 ring-flame-500/50"
+                      : "bg-ink-850 text-zinc-400 ring-1 ring-white/5 hover:bg-ink-800"
                   }`}
-                  aria-label={`Vibe ${rating}`}
                 >
-                  {emoji}
+                  {lbl}
                 </button>
               );
             })}
@@ -119,7 +120,7 @@ function CheckinForm() {
         {error && <p className="text-sm font-medium text-red-400">{error}</p>}
 
         <button className="btn-primary w-full" disabled={busy}>
-          {busy ? "Saving…" : "Post check-in 🎉"}
+          {busy ? "Saving…" : "Post check-in"}
         </button>
       </form>
     </div>

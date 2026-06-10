@@ -7,15 +7,16 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Near-black canvas + charcoal surfaces (sleek dark fitness-app look).
+        // Refined graphite surfaces — deep and premium, but lifted off pure
+        // black so the app feels open rather than closed-in.
         ink: {
-          950: "#0a0a0b", // app background
-          900: "#141416", // card / surface
-          850: "#1b1b1e", // raised surface (inputs, pills)
-          800: "#26262b", // hover / active pill
-          700: "#33333a", // hairline-ish
+          950: "#16181d", // app background (deepest)
+          900: "#1e2027", // card / primary surface
+          850: "#262932", // raised surface (inputs, pills)
+          800: "#30333d", // hover / active
+          700: "#3c3f4a", // hairlines, muted borders
         },
-        // Energetic primary accent.
+        // Warm primary accent.
         flame: {
           50: "#fff7ed",
           100: "#ffedd5",
@@ -24,12 +25,13 @@ module.exports = {
           500: "#f97316",
           600: "#ea580c",
         },
-        // Data-viz accents used for charts / insight icons.
+        // Data-viz accents for charts / progress / status.
         viz: {
-          blue: "#3b82f6",
-          violet: "#8b5cf6",
+          blue: "#60a5fa",
+          violet: "#a78bfa",
           green: "#34d399",
           coral: "#fb7185",
+          amber: "#fbbf24",
         },
       },
       fontFamily: {

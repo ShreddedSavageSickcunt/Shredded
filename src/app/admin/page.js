@@ -51,7 +51,7 @@ function AdminPanel() {
   if (!member.is_admin) {
     return (
       <div className="card mx-auto max-w-md text-center">
-        <p className="text-lg font-bold">🔒 Admins only</p>
+        <p className="text-lg font-bold">Admins only</p>
         <p className="mt-1 text-sm text-zinc-400">
           Ask a group admin to make changes here.
         </p>
@@ -79,9 +79,9 @@ function AdminPanel() {
       : supabase.from("group_settings").insert(payload).select("id").single();
     const { data, error } = await query;
     setBusy(false);
-    if (error) return setMsg("⚠️ " + error.message);
+    if (error) return setMsg("Couldn’t save: " + error.message);
     if (data?.id) setSettingsId(data.id);
-    setMsg("✅ Challenge saved!");
+    setMsg("Challenge saved.");
   }
 
   async function addMember(e) {
@@ -95,9 +95,9 @@ function AdminPanel() {
       join_date: new Date().toISOString().slice(0, 10),
     });
     setBusy(false);
-    if (error) return setMsg("⚠️ " + error.message);
+    if (error) return setMsg("Couldn’t add: " + error.message);
     setNewMember({ name: "", access_code: "", is_admin: false });
-    setMsg("✅ Member added!");
+    setMsg("Member added.");
     loadMembers();
   }
 
@@ -109,7 +109,7 @@ function AdminPanel() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-2xl font-extrabold">⚙️ Admin panel</h1>
+      <h1 className="text-2xl font-bold tracking-tight">Admin panel</h1>
       {msg && <p className="rounded-2xl bg-ink-850 px-4 py-2 text-sm font-medium ring-1 ring-white/10">{msg}</p>}
 
       {/* Challenge settings */}
@@ -176,7 +176,7 @@ function AdminPanel() {
             <input type="checkbox" className="h-4 w-4 accent-flame-500" checked={newMember.is_admin} onChange={(e) => setNewMember({ ...newMember, is_admin: e.target.checked })} />
             Make this person an admin
           </label>
-          <button className="btn-ghost" disabled={busy}>＋ Add member</button>
+          <button className="btn-ghost" disabled={busy}>Add member</button>
         </form>
       </div>
     </div>
