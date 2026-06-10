@@ -384,7 +384,7 @@ export default function WelcomePage() {
             {form.mode === "create" && (
               <div>
                 <label className="label">Squad name</label>
-                <input className="input" value={form.team_name} onChange={set("team_name")} placeholder="The Shredded Squad" autoFocus />
+                <input className="input" value={form.team_name} onChange={set("team_name")} placeholder="Enter a squad name" autoFocus />
               </div>
             )}
             {form.mode === "join" && (
