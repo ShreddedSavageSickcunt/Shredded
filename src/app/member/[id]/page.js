@@ -146,11 +146,11 @@ export default function MemberProfilePage({ params }) {
                       <Icon name="scale" className="h-4 w-4 text-zinc-500" /> {formatKg(c.weight_kg)}
                     </span>
                   )}
-                  {c.calories_consumed != null && (
+                  {c.commitments_total ? (
                     <span className="inline-flex items-center gap-1.5">
-                      <Icon name="spark" className="h-4 w-4 text-zinc-500" /> {c.calories_consumed} cal/day
+                      <Icon name="check" className="h-4 w-4 text-zinc-500" /> {c.commitments_met}/{c.commitments_total} habits kept
                     </span>
-                  )}
+                  ) : null}
                 </div>
                 {c.notes && <p className="whitespace-pre-wrap text-zinc-200">{c.notes}</p>}
                 {c.photo_url && (

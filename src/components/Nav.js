@@ -10,9 +10,7 @@ import Icon from "@/components/Icon";
 
 const LINKS = [
   { href: "/", label: "Squad", icon: "home" },
-  { href: "/checkin", label: "Check in", icon: "checkin" },
   { href: "/goals", label: "Goals", icon: "target" },
-  { href: "/admin", label: "Admin", icon: "cog" },
 ];
 
 export default function Nav() {
