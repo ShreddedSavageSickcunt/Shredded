@@ -11,7 +11,7 @@ import CalorieCalculator from "@/components/CalorieCalculator";
 function GoalsInner() {
   const { member } = useIdentity();
 
-  const [profile, setProfile] = useState({ sex: "male", age: "", height_cm: "", current_weight_kg: "", activity_factor: "1.2" });
+  const [profile, setProfile] = useState({ sex: "male", email: "", age: "", height_cm: "", current_weight_kg: "", activity_factor: "1.2" });
   const [goal, setGoal] = useState({ starting_weight_kg: "", target_weight_kg: "", target_date: "", daily_calorie_target: "", principles: "" });
   const [pace, setPace] = useState("steady");
   const [loading, setLoading] = useState(true);
@@ -25,12 +25,13 @@ function GoalsInner() {
   useEffect(() => {
     (async () => {
       const [{ data: me }, { data: g }] = await Promise.all([
-        supabase.from("members").select("sex, age, height_cm, current_weight_kg, activity_factor").eq("id", member.id).maybeSingle(),
+        supabase.from("members").select("sex, email, age, height_cm, current_weight_kg, activity_factor").eq("id", member.id).maybeSingle(),
         supabase.from("goals").select("*").eq("member_id", member.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       if (me) {
         setProfile({
           sex: me.sex || "male",
+          email: me.email ?? "",
           age: me.age ?? "",
           height_cm: me.height_cm ?? "",
           current_weight_kg: me.current_weight_kg ?? "",
@@ -62,6 +63,7 @@ function GoalsInner() {
       .from("members")
       .update({
         sex: profile.sex,
+        email: profile.email.trim() || null,
         age: num(profile.age),
         height_cm: num(profile.height_cm),
         current_weight_kg: num(profile.current_weight_kg),
@@ -97,6 +99,10 @@ function GoalsInner() {
         <section className="card space-y-4">
           <h2 className="font-semibold text-zinc-100">About you</h2>
           <AboutYouFields value={profile} onChange={setProfileField} />
+          <div>
+            <label className="label">Email <span className="text-zinc-600">(for check-in reminders)</span></label>
+            <input type="email" className="input" value={profile.email} onChange={(e) => setProfileField("email", e.target.value)} placeholder="you@email.com" autoCapitalize="none" autoCorrect="off" />
+          </div>
         </section>
 
         <section className="card space-y-4">

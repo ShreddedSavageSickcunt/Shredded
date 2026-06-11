@@ -35,6 +35,7 @@ export default function WelcomePage() {
 
   const [form, setForm] = useState({
     name: "",
+    email: "",
     age: "",
     sex: "male",
     height_cm: "",
@@ -138,6 +139,7 @@ export default function WelcomePage() {
           username: pending?.username || null,
           password: pending?.password || null,
           name: form.name.trim(),
+          email: form.email.trim() || null,
           age: form.age ? Number(form.age) : null,
           sex: form.sex,
           height_cm: form.height_cm ? Number(form.height_cm) : null,
@@ -224,6 +226,10 @@ export default function WelcomePage() {
             <div>
               <label className="label">What should we call you?</label>
               <input className="input" value={form.name} onChange={set("name")} placeholder="First name" autoFocus />
+            </div>
+            <div>
+              <label className="label">Email <span className="text-zinc-600">(for check-in reminders)</span></label>
+              <input type="email" className="input" value={form.email} onChange={set("email")} placeholder="you@email.com" autoCapitalize="none" autoCorrect="off" />
             </div>
             <AboutYouFields value={form} onChange={(k, v) => setForm((f) => ({ ...f, [k]: v }))} />
             <ActivitySelect value={form.activity_factor} onChange={(v) => setForm((f) => ({ ...f, activity_factor: v }))} />
