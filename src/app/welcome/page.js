@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase, isSupabaseConfigured } from "@/lib/supabaseClient";
 import { storeMember, getPendingSignup, clearPendingSignup, getInvite, clearInvite } from "@/lib/session";
@@ -8,8 +8,8 @@ import { useIdentity } from "@/components/useIdentity";
 import ConfigNotice from "@/components/ConfigNotice";
 import Icon from "@/components/Icon";
 import HabitPicker from "@/components/HabitPicker";
-import { ACTIVITY_LEVELS, PACES, paceRate, maintenanceCalories, suggestedCalories, estimateDaysToGoal } from "@/lib/calories";
-import { formatDate, formatDuration, addDays } from "@/lib/format";
+import AboutYouFields from "@/components/AboutYouFields";
+import CalorieCalculator from "@/components/CalorieCalculator";
 
 function makeJoinCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -70,53 +70,14 @@ export default function WelcomePage() {
     }
   }, [ready, member, router]);
 
-  // Live calorie maths from the entered details.
-  const maintenance = useMemo(
-    () =>
-      maintenanceCalories({
-        sex: form.sex,
-        weightKg: form.current_weight_kg,
-        heightCm: form.height_cm,
-        age: form.age,
-        activityFactor: form.activity_factor,
-      }),
-    [form.sex, form.current_weight_kg, form.height_cm, form.age, form.activity_factor]
-  );
-  const suggested = useMemo(
-    () =>
-      suggestedCalories({
-        maintenance,
-        currentKg: form.current_weight_kg,
-        targetKg: form.target_weight_kg,
-        sex: form.sex,
-        rate: paceRate(pace),
-      }),
-    [maintenance, form.current_weight_kg, form.target_weight_kg, form.sex, pace]
-  );
-
-  // The target follows the calculator's suggestion until the user overrides it.
+  // The daily target follows the calculator's suggestion until the user
+  // overrides it. The calculator reports its latest suggestion up here.
+  const [lastSuggested, setLastSuggested] = useState(null);
   useEffect(() => {
-    if (!caloriesTouched && suggested) {
-      setForm((f) => ({ ...f, daily_calorie_target: String(suggested) }));
+    if (!caloriesTouched && lastSuggested) {
+      setForm((f) => ({ ...f, daily_calorie_target: String(lastSuggested) }));
     }
-  }, [suggested, caloriesTouched]);
-
-  // Estimated time to reach the goal at the chosen pace, and whether it lands
-  // before the target date.
-  const estDays = useMemo(
-    () =>
-      estimateDaysToGoal({
-        currentKg: form.current_weight_kg,
-        targetKg: form.target_weight_kg,
-        rate: paceRate(pace),
-      }),
-    [form.current_weight_kg, form.target_weight_kg, pace]
-  );
-  const projectedDate = estDays ? addDays(estDays) : null;
-  const daysUntilTarget = form.target_date
-    ? Math.ceil((new Date(form.target_date).getTime() - Date.now()) / 86400000)
-    : null;
-  const missesDate = estDays && daysUntilTarget != null && estDays > daysUntilTarget;
+  }, [lastSuggested, caloriesTouched]);
 
   const canContinue = () => {
     if (step === 1) return form.name.trim() && form.current_weight_kg;
@@ -263,48 +224,7 @@ export default function WelcomePage() {
               <label className="label">What should we call you?</label>
               <input className="input" value={form.name} onChange={set("name")} placeholder="First name" autoFocus />
             </div>
-            <div>
-              <label className="label">Sex <span className="text-zinc-600">(for the calorie formula)</span></label>
-              <div className="seg w-full">
-                {["male", "female"].map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, sex: s }))}
-                    className={`seg-item flex-1 capitalize ${form.sex === s ? "seg-item-active" : ""}`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="label">Age</label>
-                <input type="number" inputMode="numeric" className="input" value={form.age} onChange={set("age")} placeholder="29" />
-              </div>
-              <div>
-                <label className="label">Height (cm)</label>
-                <input type="number" inputMode="decimal" className="input" value={form.height_cm} onChange={set("height_cm")} placeholder="178" />
-              </div>
-              <div>
-                <label className="label">Weight (kg)</label>
-                <input type="number" step="0.1" inputMode="decimal" className="input" value={form.current_weight_kg} onChange={set("current_weight_kg")} placeholder="82.5" />
-              </div>
-            </div>
-            <div>
-              <label className="label">How active are you?</label>
-              <select className="input" value={form.activity_factor} onChange={set("activity_factor")}>
-                {ACTIVITY_LEVELS.map((a) => (
-                  <option key={a.factor} value={a.factor}>
-                    {a.label}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-zinc-500">
-                {ACTIVITY_LEVELS.find((a) => String(a.factor) === String(form.activity_factor))?.desc}
-              </p>
-            </div>
+            <AboutYouFields value={form} onChange={(k, v) => setForm((f) => ({ ...f, [k]: v }))} />
           </div>
         )}
 
@@ -325,71 +245,18 @@ export default function WelcomePage() {
               </div>
             </div>
 
-            {/* Pace — how aggressively to chase the goal */}
-            <div>
-              <label className="label">How aggressively?</label>
-              <div className="grid grid-cols-3 gap-2">
-                {PACES.map((p) => {
-                  const active = pace === p.key;
-                  return (
-                    <button
-                      key={p.key}
-                      type="button"
-                      onClick={() => setPace(p.key)}
-                      className={`rounded-2xl px-2 py-2.5 text-center ring-1 transition ${
-                        active ? "bg-flame-500/10 ring-flame-500/50" : "bg-ink-850 ring-white/10 hover:bg-ink-800"
-                      }`}
-                    >
-                      <span className={`block text-sm font-semibold ${active ? "text-flame-400" : "text-zinc-200"}`}>
-                        {p.label}
-                      </span>
-                      <span className="block text-[11px] text-zinc-500">{p.weekly}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Calorie calculator */}
-            <div className="rounded-2xl bg-ink-850 p-4 ring-1 ring-white/5">
-              {maintenance ? (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-400">Maintenance</span>
-                    <span className="font-semibold text-zinc-200">{maintenance} kcal</span>
-                  </div>
-                  <div className="mt-1 flex items-center justify-between">
-                    <span className="text-sm text-zinc-400">Suggested for your goal</span>
-                    <span className="font-bold text-flame-400">{suggested} kcal</span>
-                  </div>
-                  <p className="mt-2 text-xs text-zinc-500">
-                    Mifflin–St Jeor maintenance, minus your pace. Adjust the target below any time.
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm text-zinc-400">
-                  Add your age, height, weight and activity level to calculate your calories.
-                </p>
-              )}
-            </div>
-
-            {/* Estimated time to reach the goal vs. the target date */}
-            {estDays && (
-              <div className="rounded-2xl bg-ink-850 p-3 text-sm ring-1 ring-white/5">
-                <p className="text-zinc-300">
-                  At this pace you’ll reach your goal in{" "}
-                  <span className="font-semibold text-zinc-100">{formatDuration(estDays)}</span>
-                  {projectedDate ? ` — around ${formatDate(projectedDate)}.` : "."}
-                </p>
-                {daysUntilTarget != null && (
-                  <p className={`mt-1 text-xs font-medium ${missesDate ? "text-viz-coral" : "text-viz-green"}`}>
-                    {missesDate
-                      ? `That lands after your ${formatDate(form.target_date)} target — try a faster pace or move the date.`
-                      : `On track to hit your ${formatDate(form.target_date)} target.`}
-                  </p>
-                )}
-              </div>
-            )}
+            <CalorieCalculator
+              sex={form.sex}
+              age={form.age}
+              heightCm={form.height_cm}
+              currentWeight={form.current_weight_kg}
+              activityFactor={form.activity_factor}
+              targetWeight={form.target_weight_kg}
+              targetDate={form.target_date}
+              pace={pace}
+              onPaceChange={setPace}
+              onSuggestedChange={setLastSuggested}
+            />
 
             <div>
               <label className="label">Daily calorie target</label>

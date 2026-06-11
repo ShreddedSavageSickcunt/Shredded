@@ -1,19 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useIdentity } from "@/components/useIdentity";
 import IdentityGate from "@/components/IdentityGate";
 import HabitPicker from "@/components/HabitPicker";
-import {
-  ACTIVITY_LEVELS,
-  PACES,
-  paceRate,
-  maintenanceCalories,
-  suggestedCalories,
-  estimateDaysToGoal,
-} from "@/lib/calories";
-import { formatDate, formatDuration, addDays } from "@/lib/format";
+import AboutYouFields from "@/components/AboutYouFields";
+import CalorieCalculator from "@/components/CalorieCalculator";
 
 function GoalsInner() {
   const { member } = useIdentity();
@@ -27,8 +20,8 @@ function GoalsInner() {
   const [error, setError] = useState("");
   const [commitments, setCommitments] = useState([]);
 
-  const setP = (k) => (e) => setProfile((p) => ({ ...p, [k]: e.target.value }));
   const setG = (k) => (e) => setGoal((g) => ({ ...g, [k]: e.target.value }));
+  const setProfileField = (k, v) => setProfile((p) => ({ ...p, [k]: v }));
 
   async function loadCommitments() {
     const { data } = await supabase.from("commitments").select("*").eq("member_id", member.id).order("created_at");
@@ -64,23 +57,6 @@ function GoalsInner() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [member.id]);
-
-  // Live calorie maths.
-  const maintenance = useMemo(
-    () => maintenanceCalories({ sex: profile.sex, weightKg: profile.current_weight_kg, heightCm: profile.height_cm, age: profile.age, activityFactor: profile.activity_factor }),
-    [profile.sex, profile.current_weight_kg, profile.height_cm, profile.age, profile.activity_factor]
-  );
-  const suggested = useMemo(
-    () => suggestedCalories({ maintenance, currentKg: profile.current_weight_kg, targetKg: goal.target_weight_kg, sex: profile.sex, rate: paceRate(pace) }),
-    [maintenance, profile.current_weight_kg, goal.target_weight_kg, profile.sex, pace]
-  );
-  const estDays = useMemo(
-    () => estimateDaysToGoal({ currentKg: profile.current_weight_kg, targetKg: goal.target_weight_kg, rate: paceRate(pace) }),
-    [profile.current_weight_kg, goal.target_weight_kg, pace]
-  );
-  const projectedDate = estDays ? addDays(estDays) : null;
-  const daysUntilTarget = goal.target_date ? Math.ceil((new Date(goal.target_date).getTime() - Date.now()) / 86400000) : null;
-  const missesDate = estDays && daysUntilTarget != null && estDays > daysUntilTarget;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -141,43 +117,11 @@ function GoalsInner() {
       </header>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* About you */}
         <section className="card space-y-4">
           <h2 className="font-semibold text-zinc-100">About you</h2>
-          <div>
-            <label className="label">Sex <span className="text-zinc-600">(for the calorie formula)</span></label>
-            <div className="seg w-full">
-              {["male", "female"].map((s) => (
-                <button key={s} type="button" onClick={() => setProfile((p) => ({ ...p, sex: s }))} className={`seg-item flex-1 capitalize ${profile.sex === s ? "seg-item-active" : ""}`}>{s}</button>
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="label">Age</label>
-              <input type="number" inputMode="numeric" className="input" value={profile.age} onChange={setP("age")} placeholder="29" />
-            </div>
-            <div>
-              <label className="label">Height (cm)</label>
-              <input type="number" inputMode="decimal" className="input" value={profile.height_cm} onChange={setP("height_cm")} placeholder="178" />
-            </div>
-            <div>
-              <label className="label">Current (kg)</label>
-              <input type="number" step="0.1" inputMode="decimal" className="input" value={profile.current_weight_kg} onChange={setP("current_weight_kg")} placeholder="82.5" />
-            </div>
-          </div>
-          <div>
-            <label className="label">How active are you?</label>
-            <select className="input" value={profile.activity_factor} onChange={setP("activity_factor")}>
-              {ACTIVITY_LEVELS.map((a) => (
-                <option key={a.factor} value={a.factor}>{a.label}</option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-zinc-500">{ACTIVITY_LEVELS.find((a) => String(a.factor) === String(profile.activity_factor))?.desc}</p>
-          </div>
+          <AboutYouFields value={profile} onChange={setProfileField} />
         </section>
 
-        {/* Goal + calculator */}
         <section className="card space-y-4">
           <h2 className="font-semibold text-zinc-100">Target</h2>
           <div className="grid grid-cols-3 gap-3">
@@ -195,55 +139,19 @@ function GoalsInner() {
             </div>
           </div>
 
-          {/* Pace */}
-          <div>
-            <label className="label">How aggressively?</label>
-            <div className="grid grid-cols-3 gap-2">
-              {PACES.map((p) => {
-                const active = pace === p.key;
-                return (
-                  <button key={p.key} type="button" onClick={() => setPace(p.key)} className={`rounded-2xl px-2 py-2.5 text-center ring-1 transition ${active ? "bg-flame-500/10 ring-flame-500/50" : "bg-ink-850 ring-white/10 hover:bg-ink-800"}`}>
-                    <span className={`block text-sm font-semibold ${active ? "text-flame-400" : "text-zinc-200"}`}>{p.label}</span>
-                    <span className="block text-[11px] text-zinc-500">{p.weekly}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Calculator */}
-          <div className="rounded-2xl bg-ink-850 p-4 ring-1 ring-white/5">
-            {maintenance ? (
-              <>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">Maintenance</span>
-                  <span className="font-semibold text-zinc-200">{maintenance} kcal</span>
-                </div>
-                <div className="mt-1 flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">Suggested for your goal</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-flame-400">{suggested} kcal</span>
-                    {suggested != null && String(suggested) !== String(goal.daily_calorie_target) && (
-                      <button type="button" onClick={() => setGoal((g) => ({ ...g, daily_calorie_target: String(suggested) }))} className="rounded-lg bg-flame-500/15 px-2 py-0.5 text-xs font-semibold text-flame-400 hover:bg-flame-500/25">Use</button>
-                    )}
-                  </div>
-                </div>
-                {estDays && (
-                  <p className="mt-2 text-xs text-zinc-400">
-                    At this pace, <span className="font-semibold text-zinc-200">{formatDuration(estDays)}</span>
-                    {projectedDate ? ` — around ${formatDate(projectedDate)}.` : "."}
-                    {daysUntilTarget != null && (
-                      <span className={`ml-1 font-medium ${missesDate ? "text-viz-coral" : "text-viz-green"}`}>
-                        {missesDate ? `After your ${formatDate(goal.target_date)} target.` : `On track for ${formatDate(goal.target_date)}.`}
-                      </span>
-                    )}
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-zinc-400">Fill in your age, height, current weight and activity level to calculate calories.</p>
-            )}
-          </div>
+          <CalorieCalculator
+            sex={profile.sex}
+            age={profile.age}
+            heightCm={profile.height_cm}
+            currentWeight={profile.current_weight_kg}
+            activityFactor={profile.activity_factor}
+            targetWeight={goal.target_weight_kg}
+            targetDate={goal.target_date}
+            pace={pace}
+            onPaceChange={setPace}
+            dailyTarget={goal.daily_calorie_target}
+            onUseSuggested={(v) => setGoal((g) => ({ ...g, daily_calorie_target: String(v) }))}
+          />
 
           <div>
             <label className="label">Daily calorie target</label>
@@ -260,7 +168,6 @@ function GoalsInner() {
         </section>
       </form>
 
-      {/* Habits */}
       <section className="card space-y-4">
         <div>
           <h2 className="font-semibold text-zinc-100">Your habits</h2>
