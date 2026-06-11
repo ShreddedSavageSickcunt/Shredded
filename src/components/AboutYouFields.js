@@ -1,9 +1,8 @@
 "use client";
 
-import { ACTIVITY_LEVELS } from "@/lib/calories";
-
-// Shared profile inputs used by onboarding + the Goals page.
-// `value` = { sex, age, height_cm, current_weight_kg, activity_factor }.
+// Shared profile inputs used by onboarding + the Goals page. The activity
+// level lives in its own <ActivitySelect> so each page can position it.
+// `value` = { sex, age, height_cm, current_weight_kg }.
 export default function AboutYouFields({ value, onChange }) {
   const set = (k) => (e) => onChange(k, e.target.value);
   return (
@@ -36,19 +35,6 @@ export default function AboutYouFields({ value, onChange }) {
           <label className="label">Current (kg)</label>
           <input type="number" step="0.1" inputMode="decimal" className="input" value={value.current_weight_kg} onChange={set("current_weight_kg")} placeholder="82.5" />
         </div>
-      </div>
-      <div>
-        <label className="label">How active are you?</label>
-        <select className="input" value={value.activity_factor} onChange={set("activity_factor")}>
-          {ACTIVITY_LEVELS.map((a) => (
-            <option key={a.factor} value={a.factor}>
-              {a.label}
-            </option>
-          ))}
-        </select>
-        <p className="mt-1 text-xs text-zinc-500">
-          {ACTIVITY_LEVELS.find((a) => String(a.factor) === String(value.activity_factor))?.desc}
-        </p>
       </div>
     </>
   );

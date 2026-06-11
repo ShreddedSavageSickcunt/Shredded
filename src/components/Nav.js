@@ -11,6 +11,7 @@ import Icon from "@/components/Icon";
 const LINKS = [
   { href: "/", label: "Squad", icon: "home" },
   { href: "/goals", label: "Goals", icon: "target" },
+  { href: "/habits", label: "Habits", icon: "list" },
 ];
 
 export default function Nav() {

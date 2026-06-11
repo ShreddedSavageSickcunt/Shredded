@@ -9,6 +9,7 @@ import ConfigNotice from "@/components/ConfigNotice";
 import Icon from "@/components/Icon";
 import HabitPicker from "@/components/HabitPicker";
 import AboutYouFields from "@/components/AboutYouFields";
+import ActivitySelect from "@/components/ActivitySelect";
 import CalorieCalculator from "@/components/CalorieCalculator";
 
 function makeJoinCode() {
@@ -225,6 +226,7 @@ export default function WelcomePage() {
               <input className="input" value={form.name} onChange={set("name")} placeholder="First name" autoFocus />
             </div>
             <AboutYouFields value={form} onChange={(k, v) => setForm((f) => ({ ...f, [k]: v }))} />
+            <ActivitySelect value={form.activity_factor} onChange={(v) => setForm((f) => ({ ...f, activity_factor: v }))} />
           </div>
         )}
 

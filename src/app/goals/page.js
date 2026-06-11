@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useIdentity } from "@/components/useIdentity";
 import IdentityGate from "@/components/IdentityGate";
-import HabitPicker from "@/components/HabitPicker";
 import AboutYouFields from "@/components/AboutYouFields";
+import ActivitySelect from "@/components/ActivitySelect";
 import CalorieCalculator from "@/components/CalorieCalculator";
 
 function GoalsInner() {
@@ -18,15 +18,9 @@ function GoalsInner() {
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-  const [commitments, setCommitments] = useState([]);
 
   const setG = (k) => (e) => setGoal((g) => ({ ...g, [k]: e.target.value }));
   const setProfileField = (k, v) => setProfile((p) => ({ ...p, [k]: v }));
-
-  async function loadCommitments() {
-    const { data } = await supabase.from("commitments").select("*").eq("member_id", member.id).order("created_at");
-    setCommitments(data || []);
-  }
 
   useEffect(() => {
     (async () => {
@@ -52,7 +46,6 @@ function GoalsInner() {
           principles: g.principles ?? "",
         });
       }
-      await loadCommitments();
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -91,29 +84,13 @@ function GoalsInner() {
     setTimeout(() => setSaved(false), 1800);
   }
 
-  // Habits
-  const selected = commitments.map((c) => ({ key: c.id, templateId: c.template_id, category: c.category, label: c.label }));
-  async function addHabit(habit) {
-    const tempId = `temp-${Date.now()}`;
-    setCommitments((cs) => [...cs, { id: tempId, category: habit.category, label: habit.label, template_id: habit.templateId }]);
-    const base = { member_id: member.id, category: habit.category, label: habit.label };
-    let { data, error: e1 } = await supabase.from("commitments").insert({ ...base, template_id: habit.templateId }).select("id").single();
-    if (e1 && /template_id/i.test(e1.message || "")) ({ data, error: e1 } = await supabase.from("commitments").insert(base).select("id").single());
-    if (e1) return setCommitments((cs) => cs.filter((c) => c.id !== tempId));
-    setCommitments((cs) => cs.map((c) => (c.id === tempId ? { ...c, id: data.id } : c)));
-  }
-  async function removeHabit(item) {
-    setCommitments((cs) => cs.filter((c) => c.id !== item.key));
-    await supabase.from("commitments").delete().eq("id", item.key);
-  }
-
   if (loading) return <div className="py-16 text-center text-zinc-500">Loading…</div>;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <header>
         <h1 className="text-2xl font-bold tracking-tight">Your goal</h1>
-        <p className="mt-1 text-sm text-zinc-400">Tweak your details, replay the calorie calculator, and manage your habits.</p>
+        <p className="mt-1 text-sm text-zinc-400">Tweak your details and replay the calorie calculator.</p>
       </header>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -138,6 +115,8 @@ function GoalsInner() {
               <input type="date" className="input" value={goal.target_date} onChange={setG("target_date")} />
             </div>
           </div>
+
+          <ActivitySelect value={profile.activity_factor} onChange={(v) => setProfileField("activity_factor", v)} />
 
           <CalorieCalculator
             sex={profile.sex}
@@ -167,14 +146,6 @@ function GoalsInner() {
           <button className="btn-primary w-full" disabled={busy}>{busy ? "Saving…" : "Save goal"}</button>
         </section>
       </form>
-
-      <section className="card space-y-4">
-        <div>
-          <h2 className="font-semibold text-zinc-100">Your habits</h2>
-          <p className="text-sm text-zinc-400">The actions you’ll be held accountable to each check-in.</p>
-        </div>
-        <HabitPicker selected={selected} onAdd={addHabit} onRemove={removeHabit} />
-      </section>
     </div>
   );
 }

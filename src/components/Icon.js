@@ -53,6 +53,12 @@ const PATHS = {
   trendUp: <path d="M4 17 10 11l3.5 3.5L20 8m0 0h-4.5M20 8v4.5" />,
   trendDown: <path d="M4 7l6 6 3.5-3.5L20 16m0 0h-4.5M20 16v-4.5" />,
   minus: <path d="M5 12h14" />,
+  list: (
+    <>
+      <path d="M9 6h11M9 12h11M9 18h11" />
+      <path d="M4.5 5.5l1 1 1.5-1.8M4.5 11.5l1 1 1.5-1.8M4.5 17.5l1 1 1.5-1.8" />
+    </>
+  ),
   spark: <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18" />,
   logout: <path d="M15 5h4v14h-4M14 12H4m4-4-4 4 4 4" />,
   flag: <path d="M5 21V4m0 1c3-2 7 2 10 0v8c-3 2-7-2-10 0" />,

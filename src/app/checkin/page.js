@@ -92,7 +92,7 @@ function CheckinForm() {
           {commitments.length === 0 ? (
             <div className="rounded-2xl bg-ink-850 p-4 text-sm text-zinc-400 ring-1 ring-white/5">
               You haven’t set any habits yet.{" "}
-              <Link href="/goals" className="font-semibold text-flame-400 underline">Add some on the Goals page</Link>{" "}
+              <Link href="/habits" className="font-semibold text-flame-400 underline">Add some on the Habits page</Link>{" "}
               to track your consistency.
             </div>
           ) : (
